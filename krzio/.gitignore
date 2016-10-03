@@ -1,0 +1,10 @@
+*.bin
+*.dump
+*.json
+*.gig
+*.sf2
+dox
+obj
+krzfiles
+samples
+

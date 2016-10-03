@@ -1,4 +1,7 @@
 *.bin
 *.hex
+*.krz
+*.pyc
 obj
+krzfiles
 
