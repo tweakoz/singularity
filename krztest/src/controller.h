@@ -2,6 +2,7 @@
 
 typedef std::function<float()> controller_t;
 typedef std::function<float(float)> mapper_t;
+typedef std::function<float(float,float,float)> evalit_t;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -13,5 +14,6 @@ struct FPARAM
     controller_t _C1;
     controller_t _C2;
     float _coarse;
+    evalit_t _evaluator;
 };
 

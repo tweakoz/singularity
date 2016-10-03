@@ -52,7 +52,7 @@ float FPARAM::eval(bool dump)
 {
     float c1 = _C1();
     float c2 = _C2();
-    float tot = _coarse+c1+c2;
+    float tot = _evaluator(_coarse,c1,c2);
     if( dump )
         printf( "coarse<%g> c1<%g> c2<%g> tot<%g>\n", _coarse, c1, c2, tot );
 
@@ -65,6 +65,7 @@ FPARAM layer::initFPARAM(const FBlockData& fbd)
     rval._coarse = fbd._coarse;
     rval._C1 = getSRC1(fbd._mods);
     rval._C2 = getSRC2(fbd._mods);
+    rval._evaluator = fbd._mods._evaluator;
     return rval;
 }
 
@@ -123,8 +124,12 @@ void layer::compute(outputBuffer& obuf)
     //printf( "pchc1<%f> pchc2<%f> poic<%f> currat<%f>\n", _pchc1, _pchc2, _curPitchOffsetInCents, currat );
     ////////////////////////////////////////
 
+    bool bypassDSP = _syn._bypassDSP;
     DspBlock* lastblock = _alg ? _alg->lastBlock() : nullptr;
-    bool doBlockStereo = lastblock ? (lastblock->_numOutputs==2) : false;
+    bool doBlockStereo = bypassDSP 
+                       ? false 
+                       : lastblock ? (lastblock->_numOutputs==2) 
+                                   : false;
     //printf( "doBlockStereo<%d>\n", int(doBlockStereo) );
 
     ////////////////////////////////////////
@@ -170,9 +175,8 @@ void layer::compute(outputBuffer& obuf)
             {
                 float ampenv = AENV[i];
                 float o = ((rand()&0xffff)/32768.0f)-1.0f;
-
                 lyroutl[i] = o*ampenv;
-                lyroutr[i] = o*ampenv;
+                lyroutr[i] = 0.0f;//o*ampenv;
             }
         }
         else if( _syn._sinerep )
@@ -185,9 +189,8 @@ void layer::compute(outputBuffer& obuf)
                 float ampenv = AENV[i];
                 float o = sinf(_sinrepPH)*ampenv*_preDSPGAIN;
                 _sinrepPH += phaseinc;
-
                 lyroutl[i] = o;
-                lyroutr[i] = o;
+                lyroutr[i] = 0.0f;
             }
 
         }
@@ -196,18 +199,13 @@ void layer::compute(outputBuffer& obuf)
         {
             float rawsamp = _spOsc.compute();
             float ampenv = AENV[i];
-
-
             float kmpblockOUT = rawsamp*ampenv*_preDSPGAIN;
-
             lyroutl[i] = kmpblockOUT;
-            lyroutr[i] = kmpblockOUT;
+            lyroutr[i] = 0.0f;//kmpblockOUT;
         }
         ///////////////////////////////////
         // DSP F1-F3
         ///////////////////////////////////
-
-        bool bypassDSP = _syn._bypassDSP;
 
         if(_alg and (false==bypassDSP) )
             _alg->compute(_layerObuf);
@@ -221,9 +219,21 @@ void layer::compute(outputBuffer& obuf)
             {
                 float ampenv = AENV[i];
                 //float tgain = ampenv*_postDSPGAIN*_preDSPGAIN;
-                float tgain = _postDSPGAIN;
+                float tgain = _postDSPGAIN*_masterGain;
                 outl[i] += lyroutl[i]*tgain;
                 outr[i] += lyroutr[i]*tgain;
+            }
+        }
+        else if( bypassDSP )
+        {
+            for( int i=0; i<inumframes; i++ )
+            {
+                float ampenv = AENV[i];
+                //float tgain = ampenv*_postDSPGAIN*_preDSPGAIN;
+                float tgain = _postDSPGAIN*_masterGain;
+                float inp = lyroutl[i]; 
+                outl[i] += inp*tgain*0.5f;
+                outr[i] += inp*tgain*0.5f;
             }
         }
         else
@@ -232,11 +242,11 @@ void layer::compute(outputBuffer& obuf)
             {
                 float ampenv = AENV[i];
                 //float tgain = ampenv*_postDSPGAIN*_preDSPGAIN;
-                float tgain = _postDSPGAIN;
+                float tgain = _postDSPGAIN*_masterGain;
                 float inp = lyroutl[i]; 
                 outl[i] += inp*tgain;
                 outr[i] += inp*tgain;
-            }
+            }            
         }
     }
 
@@ -441,6 +451,7 @@ void layer::keyOn( int note, const layerData* ld )
     _layerData = ld;
     _layerGain = ld->_outputGain;
     _postdone = 0;
+    _masterGain = _syn._masterGain;
 
     _lfo1.reset();
     _lfo2.reset();

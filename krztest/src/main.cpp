@@ -13,7 +13,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 //static const int kdefaultprogID = 191;
-static const int kdefaultprogID = 181;
+static const int kdefaultprogID = 8;
 static int programID = 0;
 static int octave = 4;
 static bool dokeymaps = false;
@@ -324,6 +324,14 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
           if( ! down ) break;
           the_synth->_testtone = ! the_synth->_testtone;
           break;
+        case '5':
+          if( ! down ) break;
+          the_synth->_masterGain *= 0.707f;
+          break;
+        case '6':
+          if( ! down ) break;
+          the_synth->_masterGain *= 1.0f/0.707f;
+          break;
         case '9':
           if( ! down ) break;
           the_synth->_bypassDSP = ! the_synth->_bypassDSP;
@@ -459,8 +467,10 @@ void runUI()
 
         bool modwh = the_synth->_doModWheel;
         bool press = the_synth->_doPressure;
+        float mgain = the_synth->_masterGain;
+        float mgainDB = linear_amp_ratio_to_decibel(mgain);
 
-        auto hudstr = formatString("Octave<%d> Mod<%d> Press<%d>\n", octave, int(modwh), int(press) );
+        auto hudstr = formatString("Octave<%d> Mod<%d> Press<%d> MGain<%ddB>\n", octave, int(modwh), int(press), int(mgainDB) );
 
         if( nullptr == curProg )
         {

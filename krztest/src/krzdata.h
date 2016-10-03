@@ -1,6 +1,7 @@
 #pragma once
 
 #include "krztypes.h"
+#include "controller.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -149,6 +150,7 @@ struct BlockModulationData
     float _src1Depth = 0.0f;
     float _src2MinDepth = 0.0f;
     float _src2MaxDepth = 0.0f;
+    evalit_t _evaluator;
 
 };
 

@@ -216,7 +216,8 @@ struct layer
     float _postDSPGAIN;
     float _sinrepPH = 0.0f;
     bool _doNoise;
-    
+    float _masterGain = 0.0f;
+
     FPARAM _fp[3];
 
     controller_t _pchControl1,_pchControl2;

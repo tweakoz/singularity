@@ -969,22 +969,22 @@ void synth::onDrawHudPage3(float width, float height)
       auto mapDB = [](float re, float im) ->float
       {
           float mag = re*re+im*im;
-          if( mag>1.0f )
-              mag = 1.0f;
+          //if( mag>1.0f )
+          //    mag = 1.0f;
 
           float dB = 10.0f*log_base( 10.0f, mag );
           return dB;
       };
       auto mapFFTY = [](float dbin) ->float
       {
-        float y = 750-(dbin/96.0f)*350.0f;
+        float y = 750-((dbin-36)/132.0f)*350.0f;
         return y;
       };
 
       //////////////////////////////
       glColor4f(.3,.1,.3,1);
       glBegin(GL_LINES);
-      for( int i=0; i>=-96; i-=12 )
+      for( int i=36; i>=-96; i-=12 )
       {
         float db0 = i;
         glVertex3f(100.0f,mapFFTY(db0),.0f);
@@ -1039,7 +1039,7 @@ void synth::onDrawHudPage3(float width, float height)
 
       PopOrtho();
 
-      for( int i=0; i>=-96; i-=12 )
+      for( int i=36; i>=-96; i-=12 )
       {
         float db0 = i;
         float y = mapFFTY(db0);

@@ -177,6 +177,17 @@ FunData* VastObjectsDB::parseFun( const rapidjson::Value& jo, const std::string&
 
 void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 {
+	//////////////////////////////////
+	// default evaluator
+	//////////////////////////////////
+
+	fblk._mods._evaluator = [](float coarse, float s1, float s2) -> float
+	{
+		return coarse+s1+s2;
+	};
+
+	//////////////////////////////////
+
 	if( fseg.HasMember("KeyTrack") )
 		fblk._keyTrack = fseg["KeyTrack"]["Value"].GetFloat();
 	if( fseg.HasMember("VelTrack") )
@@ -215,6 +226,16 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 				printf( "inote<%d> ioct<%d> midinote<%d> frq<%f>\n", inote, ioct, midinote, frq );
 				//assert(false);
 				assert(c["Unit"]=="nt");
+
+				// note/cent evaluator
+				fblk._mods._evaluator = [](float coarseHz, float s1Cents, float s2Cents) -> float
+				{
+					float totcents = s1Cents+s2Cents;
+					float ratio = cents_to_linear_freq_ratio(totcents);
+					//printf( "fbase<%f> totc<%f> ratio<")
+					return coarseHz*ratio;
+				};
+
 				break;
 			}
 			default:
@@ -240,6 +261,13 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 		if( s.HasMember("MaxDepth") )
 			fblk._mods._src2MaxDepth = s["MaxDepth"]["Value"].GetFloat();
 	}
+
+
+
+	//////////////////////////////////
+
+
+	//////////////////////////////////
 }
 
 ///////////////////////////////////////////////////////////////////////////////
