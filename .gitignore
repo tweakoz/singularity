@@ -2,6 +2,7 @@
 *.hex
 *.krz
 *.pyc
+*.wav
 obj
 krzfiles
 
