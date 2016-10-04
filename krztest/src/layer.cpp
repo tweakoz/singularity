@@ -150,7 +150,6 @@ void layer::compute(outputBuffer& obuf)
         // AMPENV
         ///////////////////////////////////
 
-        float AENV[1024];
         for( int i=0; i<inumframes; i++ )
         {
             float env2 = _env2.compute();
@@ -162,7 +161,7 @@ void layer::compute(outputBuffer& obuf)
             float ampenv = _useNatEnv 
                          ? _natAmpEnv.compute()
                          : _userAmpEnv.compute(); 
-            AENV[i] = ampenv;
+            _AENV[i] = ampenv;
         }
 
         ///////////////////////////////////
@@ -173,7 +172,7 @@ void layer::compute(outputBuffer& obuf)
         {
             for( int i=0; i<inumframes; i++ )
             {
-                float ampenv = AENV[i];
+                float ampenv = _AENV[i];
                 float o = ((rand()&0xffff)/32768.0f)-1.0f;
                 lyroutl[i] = o*ampenv;
                 lyroutr[i] = 0.0f;//o*ampenv;
@@ -186,7 +185,7 @@ void layer::compute(outputBuffer& obuf)
 
             for( int i=0; i<inumframes; i++ )
             {
-                float ampenv = AENV[i];
+                float ampenv = _AENV[i];
                 float o = sinf(_sinrepPH)*ampenv*_preDSPGAIN;
                 _sinrepPH += phaseinc;
                 lyroutl[i] = o;
@@ -198,7 +197,7 @@ void layer::compute(outputBuffer& obuf)
         for( int i=0; i<inumframes; i++ )
         {
             float rawsamp = _spOsc.compute();
-            float ampenv = AENV[i];
+            float ampenv = _AENV[i];
             float kmpblockOUT = rawsamp*ampenv*_preDSPGAIN;
             lyroutl[i] = kmpblockOUT;
             lyroutr[i] = 0.0f;//kmpblockOUT;
@@ -217,7 +216,7 @@ void layer::compute(outputBuffer& obuf)
         {
             for( int i=0; i<inumframes; i++ )
             {
-                float ampenv = AENV[i];
+                float ampenv = _AENV[i];
                 //float tgain = ampenv*_postDSPGAIN*_preDSPGAIN;
                 float tgain = _postDSPGAIN*_masterGain;
                 outl[i] += lyroutl[i]*tgain;
@@ -228,7 +227,7 @@ void layer::compute(outputBuffer& obuf)
         {
             for( int i=0; i<inumframes; i++ )
             {
-                float ampenv = AENV[i];
+                float ampenv = _AENV[i];
                 //float tgain = ampenv*_postDSPGAIN*_preDSPGAIN;
                 float tgain = _postDSPGAIN*_masterGain;
                 float inp = lyroutl[i]; 
@@ -240,7 +239,7 @@ void layer::compute(outputBuffer& obuf)
         {
             for( int i=0; i<inumframes; i++ )
             {
-                float ampenv = AENV[i];
+                float ampenv = _AENV[i];
                 //float tgain = ampenv*_postDSPGAIN*_preDSPGAIN;
                 float tgain = _postDSPGAIN*_masterGain;
                 float inp = lyroutl[i]; 
@@ -518,7 +517,7 @@ void layer::keyOn( int note, const layerData* ld )
         _keydiff = note-_sampleRoot;
         ///////////////////////////////////////
         
-        _kmcents = kmfinalcents;
+        _kmcents = kmfinalcents+region->_tuning;
         _pchcents = pchfinalcents;
 
         ///////////////////////////////////////

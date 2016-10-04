@@ -78,7 +78,7 @@ struct synth
 	bool _bypassDSP = false;
 	bool _doModWheel = false;
 	bool _doPressure = false;
-	float _masterGain = 1.0f;
+	float _masterGain = 0.25f;
 
 	VastObjectsDB* _objectDB;
 

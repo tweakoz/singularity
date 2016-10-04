@@ -144,7 +144,7 @@ float TrapAllpass::Tick(float input){
     y2 = y1*g1+s2;
     s2 =  y1*g1+y2;
     float output = y0-y1*damping+y2;
-    return clip_float(output,-1.0f,1.0f);
+    return output;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

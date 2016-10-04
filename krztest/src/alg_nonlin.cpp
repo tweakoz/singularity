@@ -5,6 +5,72 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+SAWPLUS::SAWPLUS( const DspBlockData& dbd )
+    : DspBlock(dbd)
+    , _pblep(48000,PolyBLEP::SAWTOOTH)
+{   _numParams = 1;                
+}
+
+void SAWPLUS::compute(dspBlockBuffer& obuf) //final
+{
+    float centoff = _ctrl[0].eval();//,0.01f,100.0f);
+    _fval[0] = centoff;
+
+    int inumframes = obuf._numframes;
+    float* ubuf = obuf._upperBuffer;
+    float lyrcents = _layer->_curcents;
+    float frq = midi_note_to_frequency((centoff+lyrcents)*0.01);
+    float SR = _layer->_syn._sampleRate;
+    _pblep.setFrequency(frq);
+
+    //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
+    if(1) for( int i=0; i<inumframes; i++ )
+    {   float input = ubuf[i];
+        float saw = _pblep.getAndInc();
+        saw *= _layer->_AENV[i];
+        float swplus = input+saw;
+        ubuf[i] = swplus;
+    }
+}
+void SAWPLUS::doKeyOn(layer* l) //final
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+SWPLUSSHP::SWPLUSSHP( const DspBlockData& dbd )
+    : DspBlock(dbd)
+    , _pblep(48000,PolyBLEP::SAWTOOTH)
+{   _numParams = 1;                
+}
+
+void SWPLUSSHP::compute(dspBlockBuffer& obuf) //final
+{
+    float centoff = _ctrl[0].eval();//,0.01f,100.0f);
+    _fval[0] = centoff;
+
+    int inumframes = obuf._numframes;
+    float* ubuf = obuf._upperBuffer;
+    float lyrcents = _layer->_curcents;
+    float frq = midi_note_to_frequency((centoff+lyrcents)*0.01);
+    float SR = _layer->_syn._sampleRate;
+    //_phaseInc = (65536.0*frq)/SR;
+    _pblep.setFrequency(frq);
+
+    if(1) for( int i=0; i<inumframes; i++ )
+    {   float input = ubuf[i];
+        float saw = _pblep.getAndInc();
+        //saw *= _layer->_AENV[i];
+        float swplusshp = shaper(input+saw,.25);
+        ubuf[i] = swplusshp*_layer->_AENV[i];
+    }
+}
+void SWPLUSSHP::doKeyOn(layer* l) //final
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 SHAPER::SHAPER( const DspBlockData& dbd )
     : DspBlock(dbd)
 {   _numParams = 1;                

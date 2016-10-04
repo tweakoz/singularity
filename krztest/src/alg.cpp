@@ -43,6 +43,8 @@ DspBlock::DspBlock(const DspBlockData& dbd)
 
 void DspBlock::keyOn(layer*l)
 {
+    _layer = l;
+
     for( int i=0; i<_numParams; i++ )
         _ctrl[i] = l->_fp[_baseIndex+i];
 
@@ -211,7 +213,6 @@ void Alg::compute(outputBuffer& obuf)
     if( touched )
     {
         intoOutBuf(obuf,_blockBuf);
-
     }
 }
 
@@ -242,10 +243,10 @@ Alg* AlgData::createAlgInst() const
             return new Alg1;
             break;
         case 2:
-            return new Alg2;
+            return new Alg1;
             break;
         case 3:
-            return new Alg3;
+            return new Alg1;
             break;
         case 4:
         case 5:
@@ -268,6 +269,10 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
 {
     DspBlock* rval = nullptr;
 
+    if( dbd._dspBlock == "SAW+")
+        rval = new SAWPLUS(dbd);
+    if( dbd._dspBlock == "SW+SHP" )
+        rval = new SWPLUSSHP(dbd);
     if( dbd._dspBlock == "PARAMETRIC EQ" )
         rval = new PARAMETRIC_EQ(dbd);
     if( dbd._dspBlock == "4POLE LOPASS W/SEP" )
@@ -296,6 +301,8 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
         rval = new HIPASS(dbd);
     if( dbd._dspBlock == "ALPASS" )
         rval = new ALPASS(dbd);
+    if( dbd._dspBlock == "2POLE ALLPASS" )
+        rval = new TWOPOLE_ALLPASS(dbd);
     if( dbd._dspBlock == "PANNER" )
         rval = new PANNER(dbd);
     if( dbd._dspBlock == "AMP U  AMPL" )

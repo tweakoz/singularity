@@ -2,6 +2,7 @@
 
 #include "controller.h"
 #include "filters.h"
+#include "PolyBLEP.h"
 
 float shaper(float inp, float adj);
 float wrap(float inp, float adj);
@@ -39,10 +40,30 @@ struct DspBlock
     int _numParams = 0;
     int _numOutputs = 1;
     int _numInputs = 1;
-    
+    layer* _layer = nullptr;
+
     float _fval[3];
     FPARAM _ctrl[3];
 };  
+
+///////////////////////////////////////////////////////////////////////////////
+// oscils
+///////////////////////////////////////////////////////////////////////////////
+
+struct SWPLUSSHP : public DspBlock
+{
+    SWPLUSSHP( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    PolyBLEP _pblep;
+    void doKeyOn(layer*l) final;
+};
+struct SAWPLUS : public DspBlock
+{
+    SAWPLUS( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    PolyBLEP _pblep;
+    void doKeyOn(layer*l) final;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // nonlinear blocks
@@ -142,6 +163,14 @@ struct ALPASS : public DspBlock
 {   
     ALPASS( const DspBlockData& dbd );
     TrapAllpass _filter;
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(layer*l) final;
+};
+struct TWOPOLE_ALLPASS : public DspBlock
+{
+    TWOPOLE_ALLPASS( const DspBlockData& dbd );
+    TrapAllpass _filterL;
+    TrapAllpass _filterH;
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(layer*l) final;
 };

@@ -217,7 +217,8 @@ struct layer
     float _sinrepPH = 0.0f;
     bool _doNoise;
     float _masterGain = 0.0f;
-
+    float _AENV[1024];
+    
     FPARAM _fp[3];
 
     controller_t _pchControl1,_pchControl2;

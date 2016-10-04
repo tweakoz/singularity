@@ -15,14 +15,20 @@ void PARAMETRIC_EQ::compute(dspBlockBuffer& obuf) //final
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
 
-    float fc = _ctrl[0].eval();
+    float fc = _ctrl[0].eval(true);
     float wid = _ctrl[1].eval();        
+    float gain = _ctrl[2].eval();        
+    _fval[0] = fc;
+    _fval[1] = wid;
+    _fval[2] = gain;
     _filter.SetWithBWoct(EM_BPF,fc,wid);
+
+    float ling = decibel_to_linear_amp_ratio(gain);
 
     if(1)for( int i=0; i<inumframes; i++ )
     {
         _filter.Tick(ubuf[i]);
-        ubuf[i] = _filter.output;
+        ubuf[i] = _filter.output*ling;
     }
 
     //printf( "ff<%f> wid<%f>\n", ff, wid );
@@ -44,7 +50,7 @@ void BANDPASS_FILT::compute(dspBlockBuffer& obuf) //final
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
 
-    float fc = _ctrl[0].eval();
+    float fc = _ctrl[0].eval(true);
     float wid = _ctrl[1].eval();        
     
     _fval[0] = fc;
@@ -97,6 +103,41 @@ void NOTCH_FILT::compute(dspBlockBuffer& obuf) //final
 
 void NOTCH_FILT::doKeyOn(layer*l) // final
 {   _filter.Clear();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+TWOPOLE_ALLPASS::TWOPOLE_ALLPASS( const DspBlockData& dbd )
+    : DspBlock(dbd)
+{   _numParams = 2;
+}
+
+void TWOPOLE_ALLPASS::compute(dspBlockBuffer& obuf) //final
+{
+    int inumframes = obuf._numframes;
+    float* ubuf = obuf._upperBuffer;
+
+    float fc = _ctrl[0].eval();
+    float wid = _ctrl[1].eval(false);
+    _fval[0] = fc;
+    _fval[1] = wid;
+
+    _filterL.Set(fc);
+    _filterH.Set(fc);
+    //printf( "fc<%f>\n", fc );
+    if(1)for( int i=0; i<inumframes; i++ )
+    {
+        float f1 = _filterL.Tick(ubuf[i]);
+        ubuf[i] = _filterH.Tick(f1);;
+    }
+
+    //printf( "ff<%f> res<%f>\n", ff, res );
+
+}
+
+void TWOPOLE_ALLPASS::doKeyOn(layer*l) // final
+{   _filterL.Clear();
+    _filterH.Clear();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
