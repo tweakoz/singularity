@@ -122,7 +122,7 @@ struct RateLevelEnvInst
 {
     RateLevelEnvInst();
     float compute();
-    void keyOn(const layerData* ld, const RateLevelEnvData*data);
+    void keyOn(int ikey, const layerData* ld, const RateLevelEnvData*data);
     void keyOff();
     void initSeg(int iseg);
     bool done() const;
@@ -144,7 +144,7 @@ struct RateLevelEnvInst
 struct NatEnv
 {
     NatEnv(const synth& syn);
-    void keyOn(const layerData* ld,const sample* s);
+    void keyOn(int ikey, const layerData* ld,const sample* s);
     void keyOff();
     const natenvseg& getCurSeg() const;
     float compute();
@@ -163,6 +163,9 @@ struct NatEnv
     float _SR;
     bool _ignoreRelease;
     bool _released;
+    float _atkAdjust;
+    float _decAdjust;
+    float _relAdjust;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -218,7 +221,7 @@ struct layer
     bool _doNoise;
     float _masterGain = 0.0f;
     float _AENV[1024];
-    
+
     FPARAM _fp[3];
 
     controller_t _pchControl1,_pchControl2;

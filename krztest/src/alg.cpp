@@ -287,8 +287,8 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
         rval = new LOPAS2(dbd);
     if( dbd._dspBlock == "LP2RES" )
         rval = new LOPAS2(dbd);
-    if( dbd._dspBlock == "SHAPER" )
-        rval = new SHAPER(dbd);
+    //if( dbd._dspBlock == "SHAPER" )
+    //    rval = new SHAPER(dbd);
     if( dbd._dspBlock == "2PARAM SHAPER" )
         rval = new TWOPARAM_SHAPER(dbd);
     if( dbd._dspBlock == "WRAP" )

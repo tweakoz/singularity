@@ -302,7 +302,10 @@ void VastObjectsDB::parseDspBlock( const Value& dseg, DspBlockData& dblk )
 	}
 	if( dseg.HasMember("PARAM_SCHEME") )
 		dblk._paramScheme = dseg["PARAM_SCHEME"].GetString();
-
+	if( dseg.HasMember("Pad") )
+	{	dblk._pad = decibel_to_linear_amp_ratio(dseg["Pad"].GetFloat());
+		//assert(false);
+	}
 	parseFBlock(dseg,dblk);
 }
 
@@ -488,6 +491,9 @@ void VastObjectsDB::parseEnvControl( const rapidjson::Value& seg, EnvCtrlData& e
 	ed._atkAdjust = seg["AtkAdjust"].GetFloat();
 	ed._decAdjust = seg["DecAdjust"].GetFloat();
 	ed._relAdjust = seg["RelAdjust"].GetFloat();
+
+	ed._decKeyTrack = seg["DecKeyTrack"].GetFloat();
+	ed._relKeyTrack = seg["RelKeyTrack"].GetFloat();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

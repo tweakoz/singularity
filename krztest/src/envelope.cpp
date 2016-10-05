@@ -234,12 +234,34 @@ float RateLevelEnvInst::compute()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void RateLevelEnvInst::keyOn(const layerData* ld, const RateLevelEnvData*data)
+void RateLevelEnvInst::keyOn(int ikey, const layerData* ld, const RateLevelEnvData*data)
 {   
     const auto& EC = ld->_envCtrlData;
+    const auto& DKT = EC._decKeyTrack;
+    const auto& RKT = EC._relKeyTrack;
+    printf( "ikey<%d> DKT<%f>\n", ikey, DKT );
+
+    float fkl = -1.0f+float(ikey)/63.5f;
+
     _atkAdjust = EC._atkAdjust;
     _decAdjust = EC._decAdjust;
     _relAdjust = EC._relAdjust;
+
+    if( ikey>60 )
+    {
+        float flerp = float(ikey-60)/float(127-60);
+        _decAdjust = lerp(_decAdjust,DKT,flerp);
+        _relAdjust = lerp(_relAdjust,RKT,flerp);
+    }
+    else if( ikey<60 )
+    {
+        float flerp = float(59-ikey)/59.0f;
+        _decAdjust = lerp(_decAdjust,1.0/DKT,flerp);
+        _relAdjust = lerp(_relAdjust,1.0/RKT,flerp);
+    }
+    //printf( "flerp<%f> _decAdjust<%f>\n", flerp,_decAdjust);
+
+    printf( "_relAdjust<%f>\n", _relAdjust );
     _ignoreRelease = ld->_ignRels;
     _data = data;
     assert(_data);
@@ -284,7 +306,7 @@ NatEnv::NatEnv(const synth& syn)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void NatEnv::keyOn(const layerData* ld,const sample* s)
+void NatEnv::keyOn(int ikey, const layerData* ld,const sample* s)
 {
     _natenv = s->_natenv;
     _numseg = _natenv.size();
@@ -293,6 +315,26 @@ void NatEnv::keyOn(const layerData* ld,const sample* s)
     _curamp = 1.0f;
     _released = false;
     _ignoreRelease = ld->_ignRels;
+
+    const auto& EC = ld->_envCtrlData;
+    const auto& DKT = EC._decKeyTrack;
+    const auto& RKT = EC._relKeyTrack;
+
+    _decAdjust = EC._decAdjust;
+    _relAdjust = EC._relAdjust;
+
+    if( ikey>60 )
+    {
+        float flerp = float(ikey-60)/float(127-60);
+        _decAdjust = lerp(_decAdjust,DKT,flerp);
+        _relAdjust = lerp(_relAdjust,RKT,flerp);
+    }
+    else if( ikey<60 )
+    {
+        float flerp = float(59-ikey)/59.0f;
+        _decAdjust = lerp(_decAdjust,1.0/DKT,flerp);
+        _relAdjust = lerp(_relAdjust,1.0/RKT,flerp);
+    }
 
     initSeg(0);
 }
@@ -324,7 +366,19 @@ void NatEnv::initSeg(int iseg)
 {
     _curseg = iseg;
     const auto& seg = getCurSeg();
+
     _slopePerSecond = seg._slope;
+    if( _released )
+    {
+        _slopePerSecond*=_relAdjust;
+    }
+    else
+    {
+        _slopePerSecond*=_decAdjust;
+    }
+
+
+
     _slopePerSample = slopeDBPerSample(_slopePerSecond,192000.0);
     _segtime = seg._time;
     _framesrem = seg._time; ///16.0f;// * _SR / 48000.0f;

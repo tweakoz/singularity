@@ -40,37 +40,6 @@ layer::layer(synth& syn)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-FPARAM::FPARAM()
-    : _coarse(0.0f)
-{
-   _C1 = [](){return 0.0f;};
-   _C2 = [](){return 0.0f;};
-
-}
-
-float FPARAM::eval(bool dump)
-{
-    float c1 = _C1();
-    float c2 = _C2();
-    float tot = _evaluator(_coarse,c1,c2);
-    if( dump )
-        printf( "coarse<%g> c1<%g> c2<%g> tot<%g>\n", _coarse, c1, c2, tot );
-
-    return tot;
-}
-
-FPARAM layer::initFPARAM(const FBlockData& fbd)
-{
-    FPARAM rval;
-    rval._coarse = fbd._coarse;
-    rval._C1 = getSRC1(fbd._mods);
-    rval._C2 = getSRC2(fbd._mods);
-    rval._evaluator = fbd._mods._evaluator;
-    return rval;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
 void layer::compute(outputBuffer& obuf)
 {
     ///////////////////////
@@ -378,6 +347,10 @@ controller_t layer::getController(const std::string& srcn) const
         return [this]()
         {   return 1.0f;
         };
+    else if( srcn == "KeyNum" )
+        return [this]()
+        {   return this->_curnote;
+        };
     else
     {
         float fv = atof(srcn.c_str());
@@ -421,7 +394,7 @@ controller_t layer::getSRC2(const BlockModulationData& mods)
    
     auto it = [=]()->float
     {   
-        float dc = depthcon();
+        float dc = clip_float(depthcon(),0,1);
         float depth = lerp(mindepth,maxdepth,dc);
         float out = src2()*depth;
         return out;
@@ -584,14 +557,14 @@ void layer::keyOn( int note, const layerData* ld )
     ///////////////////////////////////////
 
     if( _useNatEnv && region->_sample )
-        _natAmpEnv.keyOn(ld,region->_sample);
+        _natAmpEnv.keyOn(note,ld,region->_sample);
     else
-        _userAmpEnv.keyOn(ld, ld->_userAmpEnv);
+        _userAmpEnv.keyOn(note, ld, ld->_userAmpEnv);
 
     if( ld->_env2 )
-        _env2.keyOn(ld, ld->_env2);
+        _env2.keyOn(note, ld, ld->_env2);
     if( ld->_env3 )
-        _env3.keyOn(ld, ld->_env3);
+        _env3.keyOn(note, ld, ld->_env3);
 
     if( ld->_asr1 )
         _asr1.keyOn(ld,ld->_asr1);
