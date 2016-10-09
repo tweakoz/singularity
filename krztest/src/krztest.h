@@ -89,26 +89,6 @@ struct synth
 
 };
 
-struct SynthData
-{
-	SynthData(synth* syn);
-	float seqTime(float dur);
-	const programData* getProgram(int progID);
-	const programData* getKmTestProgram(int kmID);
-	void addEvent(float time, void_lamda_t ev);
-	void tick(float dt);
-
-	std::multimap<float,void_lamda_t> _eventmap;
-	programInst* _prog;
-	float _synsr;
-	std::map<int,programData*> _testKmPrograms;
-    VastObjectsDB* _objects;
-    synth* _syn;
-    float _timeaccum;
-    float _seqCursor;
-
-};
-
 ///////////////////////////////////////////////////////////////////////////////
 
 std::string formatString( const char* formatstring, ... );

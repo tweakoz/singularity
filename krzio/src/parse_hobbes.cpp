@@ -140,6 +140,8 @@ void filescanner::parseHobbes(	const datablock& db,
 		getFParamEVNODD(hfp);
 	else if( hfp._blockScheme == "ODD" )
 		getFParamEVNODD(hfp);
+	else if( hfp._blockScheme == "XFD" )
+		getFParamXFD(hfp);
 
 	_algschmap[hfp._blockName] = hfp._blockScheme;
 

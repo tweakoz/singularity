@@ -30,7 +30,6 @@ struct VastObjectsDB
     void parsePchBlock( const Value& JO, PchBlockData& pblk );
     void parseFBlock( const Value& JO, FBlockData& fb );
     void parseDspBlock( const Value& JO, DspBlockData& dblk );
-    void parseAmpBlock( const Value& JO, AmpBlockData& ablk );
 
     std::map<int,programData*> _programs;
     std::map<int,keymap*> _keymaps;

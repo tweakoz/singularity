@@ -30,6 +30,7 @@ struct EnvPoint
 
 struct RateLevelEnvData 
 {
+    RateLevelEnvData(std::string n="");
     std::vector<EnvPoint> _segments;
     std::string _name;
     bool isBiPolar() const;
@@ -143,14 +144,14 @@ struct FunData
 
 struct BlockModulationData
 {
-    std::string _src1;
-    std::string _src2;
-    std::string _src2DepthCtrl;
+    std::string _src1 = "OFF";
+    std::string _src2 = "OFF";
+    std::string _src2DepthCtrl = "OFF";
 
     float _src1Depth = 0.0f;
     float _src2MinDepth = 0.0f;
     float _src2MaxDepth = 0.0f;
-    evalit_t _evaluator;
+    evalit_t _evaluator = [](float c,float,float)->float{return c;};
 
 };
 
@@ -198,13 +199,6 @@ struct DspBlockData : public FBlockData
 
 ///////////////////////////////////////////////////////////////////////////////
 
-struct AmpBlockData : public FBlockData
-{
-    float _pad = -18.0f;
-};
-
-///////////////////////////////////////////////////////////////////////////////
-
 struct EnvCtrlData
 {
     bool _useNatEnv = true;
@@ -234,7 +228,7 @@ struct layerData
     DspBlockData _f1Block;
     DspBlockData _f2Block;
     DspBlockData _f3Block;
-    AmpBlockData _ampBlock;
+    DspBlockData _f4Block;
 
     const keymap* _keymap = nullptr;
     int _loKey = 0;
@@ -269,7 +263,35 @@ struct programData
     layerData* newLayer();
     layerData* getLayer(int i) const { return _layerDatas[i]; }
     std::string _name;
+    std::string _role;
     std::vector<layerData*> _layerDatas;
-    bool _iskmtest = false;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+struct programInst;
+
+struct SynthData
+{
+    SynthData(synth* syn);
+    float seqTime(float dur);
+    const programData* getProgram(int progID);
+    const programData* getKmTestProgram(int kmID);
+    const programData* getTestProgram(int progID);
+
+    void addEvent(float time, void_lamda_t ev);
+    void tick(float dt);
+    void genTestPrograms();
+
+    std::multimap<float,void_lamda_t> _eventmap;
+    programInst* _prog;
+    float _synsr;
+    std::map<int,programData*> _testKmPrograms;
+    std::vector<programData*> _testPrograms;
+    VastObjectsDB* _objects;
+    synth* _syn;
+    float _timeaccum;
+    float _seqCursor;
+
 };
 

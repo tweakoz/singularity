@@ -2,6 +2,28 @@
 
 using namespace rapidjson;
 
+void getFParamXFD( fparam& fp )
+{
+    int adj = makeSigned(fp._inputCourse);
+
+    int keytrk = makeSigned(fp._inputKeyTrack );
+    int veltrk = makeSigned(fp._inputVelTrack );
+    int depth = makeSigned(fp._inputDepth );
+    int minDpt = makeSigned(fp._inputMinDepth );
+    int maxDpt = makeSigned(fp._inputMaxDepth );
+
+    //std::string getFreq83( int ival )
+
+    fp._varCoarseAdjust.set<int>("Coarse","%%","%%d", adj);
+    fp._varKeyTrack.set<int>("KeyTrack","%%/key","%%d", keytrk*.02f);
+    fp._varVelTrack.set<int>("VelTrack","%%","%%d", veltrk*2.0f);
+    fp._varSrc1Depth.set<int>("Depth","%%","%%d", depth*2.0f);
+    fp._varSrc2MinDepth.set<int>("MinDepth","%%","%%d", minDpt*2.0f);
+    fp._varSrc2MaxDepth.set<int>("MaxDepth","%%","%%d", maxDpt*2.0f);
+
+}
+
+
 void getFParamFRQ( fparam& fp )
 {
     int fine = makeSigned(fp._inputFine);

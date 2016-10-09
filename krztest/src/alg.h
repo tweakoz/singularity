@@ -64,6 +64,89 @@ struct SAWPLUS : public DspBlock
     PolyBLEP _pblep;
     void doKeyOn(layer*l) final;
 };
+struct SINE : public DspBlock
+{
+    SINE( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    PolyBLEP _pblep;
+    void doKeyOn(layer*l) final;
+};
+struct SINEPLUS : public DspBlock
+{
+    SINEPLUS( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    PolyBLEP _pblep;
+    void doKeyOn(layer*l) final;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// nonlinear blocks
+///////////////////////////////////////////////////////////////////////////////
+
+struct AMP : public DspBlock
+{
+    AMP( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(layer*l) final;
+    float _filt;
+};
+struct PLUSAMP : public DspBlock
+{
+    PLUSAMP( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(layer*l) final;
+    float _filt;
+};
+struct XAMP : public DspBlock
+{
+    XAMP( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(layer*l) final;
+    float _filt;
+};
+struct GAIN : public DspBlock
+{
+    GAIN( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    float _filt;
+};
+
+struct AMPU_AMPL : public DspBlock
+{
+    AMPU_AMPL( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(layer*l) final;
+    float _filtU, _filtL;
+};
+
+struct BAL_AMP : public DspBlock
+{
+    BAL_AMP( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    float _filt;
+};
+
+struct XGAIN : public DspBlock
+{
+    XGAIN( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    float _filt;
+};
+
+struct XFADE : public DspBlock
+{
+    XFADE( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(layer*l) final;
+    float _pumix, _plmix; // for smoothing
+};
+struct PANNER : public DspBlock
+{
+    PANNER( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(layer*l) final;
+    float _plmix, _prmix; // for smoothing
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // nonlinear blocks
@@ -83,6 +166,8 @@ struct TWOPARAM_SHAPER : public DspBlock
 {
     TWOPARAM_SHAPER( const DspBlockData& dbd );
     void compute(dspBlockBuffer& obuf) final;
+    float ph1, ph2;
+    void doKeyOn(layer*l) final;
 };
 struct WRAP : public DspBlock
 {
@@ -103,6 +188,7 @@ struct PARAMETRIC_EQ : public DspBlock
 {
     PARAMETRIC_EQ( const DspBlockData& dbd );
     TrapSVF _filter;
+    BiQuad _biquad;
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(layer*l) final;
 };
@@ -187,13 +273,14 @@ struct Alg
     virtual int f1BlockCount() const { return 0; }
     virtual int f2BlockCount() const { return 0; }
     virtual int f3BlockCount() const { return 0; }
+    virtual int f4BlockCount() const { return 0; }
     virtual void compute(outputBuffer& obuf);
 
     void intoDspBuf(const outputBuffer& obuf, dspBlockBuffer& dspbuf);
     void intoOutBuf(outputBuffer& obuf, const dspBlockBuffer& dspbuf);
     DspBlock* lastBlock() const;
 
-    DspBlock* _block[3];
+    DspBlock* _block[4];
 
     dspBlockBuffer _blockBuf;
 };

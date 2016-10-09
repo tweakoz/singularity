@@ -53,71 +53,22 @@ void DspBlock::keyOn(layer*l)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-struct PANNER : public DspBlock
-{   
-    PANNER( const DspBlockData& dbd )
-        :DspBlock(dbd)
-    {   _numParams = 1;
-        _numOutputs = 2;
-    }
-    float _plmix, _prmix;
-    void compute(dspBlockBuffer& obuf) final
-    {
-        int inumframes = obuf._numframes;
-        float* ubuf = obuf._upperBuffer;
-        float* lbuf = obuf._lowerBuffer;
-        float pos = _ctrl[0].eval();
-        float pan = pos*0.01f;
-        float lmix = (pan>0) 
-                   ? lerp(0.5,0,pan)
-                   : lerp(0.5,1,-pan);
-        float rmix = (pan>0) 
-                   ? lerp(0.5,1,pan)
-                   : lerp(0.5,0,-pan);
+Alg::Alg()
+{
+    for( int i=0; i<4; i++ )
+        _block[i] = nullptr;
+}
 
-        _fval[0] = pos;
-        //_fval[1] = lmix;
-        //_fval[2] = rmix;
-        //printf( "pan<%f> lmix<%f> rmix<%f>\n", pan, lmix, rmix );
-        if(1)for( int i=0; i<inumframes; i++ )
-        {
-            float input = ubuf[i];
-            _plmix = _plmix*0.995f+lmix*0.005f;
-            _prmix = _prmix*0.995f+rmix*0.005f;
+///////////////////////////////////////////////////////////////////////////////
 
-            ubuf[i] = input*_plmix;
-            lbuf[i] = input*_prmix;
-        }
-    }
-    void doKeyOn(layer*l) final
-    {   _plmix = 0.0f;
-        _prmix = 0.0f;
-    }
-};
-
-struct AMPU_AMPL : public DspBlock
-{   
-    AMPU_AMPL( const DspBlockData& dbd ):DspBlock(dbd){}
-    FPARAM _controlAMPU;
-    void compute(dspBlockBuffer& obuf) final
-    {
-        int inumframes = obuf._numframes;
-        float* lbuf = obuf._upperBuffer;
-        float* rbuf = obuf._lowerBuffer;
-        float ampu = _controlAMPU.eval(true)*0.01f;
-
-        if(0)for( int i=0; i<inumframes; i++ )
-        {
-            float input = lbuf[i];
-
-            lbuf[i] = input;//*lmix;
-            rbuf[i] = input;//*rmix;
-        }
-    }
-    void doKeyOn(layer*l) final
-    {   _controlAMPU = l->_fp[_baseIndex];
-    }
-};
+DspBlock* Alg::lastBlock() const
+{
+    DspBlock* r = nullptr;
+    for( int i=0; i<4; i++ )
+        if( _block[i] )
+            r = _block[i];
+    return r;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -125,13 +76,15 @@ void Alg::keyOn(layer*l)
 {
     assert(l!=nullptr);
 
-    for( int i=0; i<3; i++ )
+    for( int i=0; i<4; i++ )
         _block[i] = nullptr;
 
     const auto ld = l->_layerData;    
     const auto& F1D = ld->_f1Block;
     const auto& F2D = ld->_f2Block;
     const auto& F3D = ld->_f3Block;
+    const auto& F4D = ld->_f4Block;
+
     if( F1D._dspBlock.length() )
     {
         _block[0] = createDspBlock(F1D);
@@ -153,6 +106,13 @@ void Alg::keyOn(layer*l)
             _block[2]->keyOn(l);
         printf( "createF3<%s>\n",F3D._dspBlock.c_str() );
     }
+    if( F4D._dspBlock.length() )
+    {
+        _block[3] = createDspBlock(F4D);
+        if( _block[3] )
+            _block[3]->keyOn(l);
+        printf( "createF4<%s> b4<%p>\n",F4D._dspBlock.c_str(), _block[3] );
+    }
     //const auto& F1D = ld->_ampBlock;
 
 
@@ -162,7 +122,7 @@ void Alg::keyOn(layer*l)
 
 void Alg::keyOff()
 {
-    for( int i=0; i<3; i++ )
+    for( int i=0; i<4; i++ )
     {
         auto b = _block[i];
         if( b ) 
@@ -182,7 +142,7 @@ void Alg::intoDspBuf(const outputBuffer& obuf, dspBlockBuffer& dspbuf)
     float* uprbuf = _blockBuf._upperBuffer;
     float* lwrbuf = _blockBuf._lowerBuffer;
     memcpy( uprbuf, lefbuf, inumframes*4 );
-    memcpy( lwrbuf, rhtbuf, inumframes*4 );
+    memcpy( lwrbuf, lefbuf, inumframes*4 );
 }
 void Alg::intoOutBuf(outputBuffer& obuf, const dspBlockBuffer& dspbuf)
 {
@@ -202,7 +162,7 @@ void Alg::compute(outputBuffer& obuf)
 
     bool touched = false;
 
-    for( int i=0; i<3; i++ )
+    for( int i=0; i<4; i++ )
     {
         auto b = _block[i];
         if( b )
@@ -269,6 +229,26 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
 {
     DspBlock* rval = nullptr;
 
+    if( dbd._dspBlock == "XFADE")
+        rval = new XFADE(dbd);
+    if( dbd._dspBlock == "XGAIN")
+        rval = new XGAIN(dbd);
+    if( dbd._dspBlock == "GAIN")
+        rval = new GAIN(dbd);
+    if( dbd._dspBlock == "AMP")
+        rval = new AMP(dbd);
+    if( dbd._dspBlock == "+ AMP")
+        rval = new PLUSAMP(dbd);
+    if( dbd._dspBlock == "x AMP")
+        rval = new XAMP(dbd);
+
+
+    if( dbd._dspBlock == "AMP U   AMP L")
+        rval = new AMPU_AMPL(dbd);
+    if( dbd._dspBlock == "SINE")
+        rval = new SINE(dbd);
+    if( dbd._dspBlock == "SINE+")
+        rval = new SINEPLUS(dbd);
     if( dbd._dspBlock == "SAW+")
         rval = new SAWPLUS(dbd);
     if( dbd._dspBlock == "SW+SHP" )
@@ -287,8 +267,8 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
         rval = new LOPAS2(dbd);
     if( dbd._dspBlock == "LP2RES" )
         rval = new LOPAS2(dbd);
-    //if( dbd._dspBlock == "SHAPER" )
-    //    rval = new SHAPER(dbd);
+    if( dbd._dspBlock == "SHAPER" )
+        rval = new SHAPER(dbd);
     if( dbd._dspBlock == "2PARAM SHAPER" )
         rval = new TWOPARAM_SHAPER(dbd);
     if( dbd._dspBlock == "WRAP" )
@@ -311,19 +291,4 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
     return rval;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 
-Alg::Alg()
-{
-    for( int i=0; i<3; i++ )
-        _block[i] = nullptr;
-}
-
-DspBlock* Alg::lastBlock() const
-{
-    DspBlock* r = nullptr;
-    for( int i=0; i<3; i++ )
-        if( _block[i] )
-            r = _block[i];
-    return r;
-}

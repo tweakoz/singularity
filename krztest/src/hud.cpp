@@ -71,7 +71,7 @@ void synth::onDrawHudPage1(float width, float height)
     auto kmr = _hudLayer->_kmregion;
     const auto& KMP = ld->_kmpBlock;
     const auto& PCH = ld->_pchBlock;
-    const auto& AMP = ld->_ampBlock;
+    const auto& AMP = ld->_f4Block;
     const auto& ENVCT = ld->_envCtrlData;
 
     const auto& sosc = _hudLayer->_spOsc;
@@ -311,7 +311,7 @@ void DrawEnv(synth* s, layer* layer, svar_t env, int VPW, int VPH, int X1, int Y
 
     int ldi = layer->_ldindex+1;
     auto ld = layer->_layerData;
-    const auto& AMP = ld->_ampBlock;
+    const auto& AMP = ld->_f4Block;
     const auto& ENVCT = ld->_envCtrlData;
     bool collsamp = ( s->_lnoteframe%3 == 0 );
 
@@ -531,7 +531,7 @@ void DrawAsr(synth* s, layer* layer, AsrInst* env, int VPW, int VPH, int X1, int
 
     int ldi = layer->_ldindex+1;
     auto ld = layer->_layerData;
-    const auto& AMP = ld->_ampBlock;
+    const auto& AMP = ld->_f4Block;
     const auto& ENVCT = ld->_envCtrlData;
     bool collsamp = ( s->_lnoteframe%3 == 0 );
 
@@ -1063,12 +1063,12 @@ void synth::onDrawHudPage3(float width, float height)
       float xb = 1150;
       float yb = 300;
       float dspw = 400;
-      float dsph = 100;
+      float dsph = 150;
       float yinc = dsph+50;
 
       glColor4f(.7,.7,.3,1);
       PushOrtho(width,height);
-      for( int i=0; i<3; i++ )
+      for( int i=0; i<4; i++ )
       {
          auto b = alg->_block[i];
          if( b )
@@ -1089,11 +1089,12 @@ void synth::onDrawHudPage3(float width, float height)
       auto alghdr = formatString("DSP Algorithm: %s", algd._name.c_str() );
       drawtext( alghdr, xb+80, yb-30, fontscale, 1,1,1 );
 
-      for( int i=0; i<3; i++ )
+      for( int i=0; i<4; i++ )
       {
          auto b = alg->_block[i];
          if( b )
          {
+            const auto& dbd = b->_dbd;
             int fidx = b->_baseIndex;
 
             auto name = b->_dbd._dspBlock;
@@ -1114,6 +1115,10 @@ void synth::onDrawHudPage3(float width, float height)
                 drawfhud(1,yt+40);
             if( b->_numParams>2 )
                 drawfhud(2,yt+60);
+
+            auto text = formatString("PAD<%f>",dbd._pad);
+            drawtext( text, xt, yt+100, fontscale, 1,1,1 );
+              //drawfhud(2,yt+60);
 
             yb += yinc;
          }

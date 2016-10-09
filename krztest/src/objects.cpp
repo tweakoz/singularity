@@ -311,14 +311,6 @@ void VastObjectsDB::parseDspBlock( const Value& dseg, DspBlockData& dblk )
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void VastObjectsDB::parseAmpBlock( const Value& aseg, AmpBlockData& ablk )
-{
-	parseFBlock(aseg,ablk);
-	ablk._pad = aseg["Pad"].GetFloat();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
 layerData* VastObjectsDB::parseLayer( const Value& jsonobj, programData* pd )
 {
 	const auto& name = pd->_name;
@@ -457,6 +449,7 @@ layerData* VastObjectsDB::parseLayer( const Value& jsonobj, programData* pd )
 	rval->_f1Block._blockIndex = 0;
 	rval->_f2Block._blockIndex = 1;
 	rval->_f3Block._blockIndex = 2;
+	rval->_f4Block._blockIndex = 3;
 	//rval->_ampBlock._blockIndex = 3;
 	if( jsonobj.HasMember("F1") )
 		parseDspBlock(jsonobj["F1"],rval->_f1Block);
@@ -465,7 +458,7 @@ layerData* VastObjectsDB::parseLayer( const Value& jsonobj, programData* pd )
 	if( jsonobj.HasMember("F3") )
 		parseDspBlock(jsonobj["F3"],rval->_f3Block);
 	if( jsonobj.HasMember("F4AMP") )
-		parseAmpBlock(jsonobj["F4AMP"],rval->_ampBlock);
+		parseDspBlock(jsonobj["F4AMP"],rval->_f4Block);
 	//////////////////////////////////////////////////////
 
 	//printf( "got keymapID<%d:%p:%s>\n", kmid, km, km->_name.c_str() );
@@ -501,6 +494,7 @@ void VastObjectsDB::parseEnvControl( const rapidjson::Value& seg, EnvCtrlData& e
 programData* VastObjectsDB::parseProgram( const Value& jsonobj )
 {
 	auto pdata = new programData;
+	pdata->_role = "Program";
 	const auto& name = jsonobj["Program"].GetString();
 	//printf( "Got Prgram name<%s>\n", name );
 	pdata->_name = name;

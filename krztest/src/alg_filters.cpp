@@ -15,12 +15,19 @@ void PARAMETRIC_EQ::compute(dspBlockBuffer& obuf) //final
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
 
-    float fc = _ctrl[0].eval(true);
-    float wid = _ctrl[1].eval();        
-    float gain = _ctrl[2].eval();        
+    float fc = _ctrl[0].eval();
+    float wid = 2*_ctrl[1].eval();        
+    float gain = _ctrl[2].eval();
+    //bool isneg = gain<0.0;
+    //gain = sqrtf(fabs(gain));
+    //if(isneg)
+    //    gain *= -1.0;
+
     _fval[0] = fc;
     _fval[1] = wid;
     _fval[2] = gain;
+
+    _biquad.SetBpfWithBWoct(fc,wid,gain);
     _filter.SetWithBWoct(EM_BPF,fc,wid);
 
     float ling = decibel_to_linear_amp_ratio(gain);
@@ -28,7 +35,10 @@ void PARAMETRIC_EQ::compute(dspBlockBuffer& obuf) //final
     if(1)for( int i=0; i<inumframes; i++ )
     {
         _filter.Tick(ubuf[i]);
-        ubuf[i] = _filter.output*ling;
+        float biq = _biquad.compute(ubuf[i]);
+
+        //ubuf[i] = _filter.output*ling;
+        ubuf[i] = biq;
     }
 
     //printf( "ff<%f> wid<%f>\n", ff, wid );
@@ -50,7 +60,7 @@ void BANDPASS_FILT::compute(dspBlockBuffer& obuf) //final
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
 
-    float fc = _ctrl[0].eval(true);
+    float fc = _ctrl[0].eval();
     float wid = _ctrl[1].eval();        
     
     _fval[0] = fc;

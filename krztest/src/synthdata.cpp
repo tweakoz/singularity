@@ -36,7 +36,7 @@ const programData* SynthData::getKmTestProgram(int kmID)
 	{
 		auto ObjDB = _syn->_objectDB;
 		rval = new programData;
-		rval->_iskmtest = true;
+		rval->_role = "KmTest";
 		auto km = ObjDB->findKeymap(kmID);
 		if( km )
 		{
@@ -54,6 +54,18 @@ const programData* SynthData::getKmTestProgram(int kmID)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+const programData* SynthData::getTestProgram(int progid)
+{
+	int inumtests = _testPrograms.size();
+	int testid = progid%inumtests;
+	printf( "test<%d>\n", testid );
+	auto test = _testPrograms[testid];
+	return test;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 SynthData::SynthData(synth* syn)
 	: _syn(syn)
 	, _timeaccum(0.0f)
@@ -64,6 +76,7 @@ SynthData::SynthData(synth* syn)
 	auto ObjDB = syn->_objectDB;
 
 	ObjDB->loadJson("krzdump.json");
+	_objects = ObjDB;
 
 	// C4 = 72
 	float t1, t2;
@@ -148,6 +161,8 @@ SynthData::SynthData(synth* syn)
 
 	///////////////////////////////////////
 
+	genTestPrograms();
+
 	//_lpf.setup(330.0f,_synsr);
 }
 
@@ -180,35 +195,93 @@ void SynthData::tick(float dt)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-/*
-float compute()
+void SynthData::genTestPrograms()
 {
-	float s1 = _sosc1.sample();
-	float s2 = _sosc2.sample();
-	float s3 = _sosc3.sample();
+	auto t1 = new programData;
+	t1->_role = "PrgTest";
+	_testPrograms.push_back(t1);
+	t1->_name = "YO";
 
-	float adj = 0.5f-cosf(phase)*0.4f;
-	float adj2 = 0.5f-cosf(phase*5.3f)*0.5f;
-	float adj3 = 0.5f-cosf(phase*20	)*0.5f;
-	float plfo3 = 0.5f-cosf(phase*0.3)*0.4f;
+	auto l1 = t1->newLayer();
+	const int keymap_sine = 163;
+	const int keymap_saw = 151;
 
-	//_lpf.setup(adj*3300.0f,_synsr);
-	_lpf.setup(4000.0f*fmod(phase,1),_synsr);
+	l1->_keymap = _objects->findKeymap(keymap_saw);
 
-	_notch.setup(880.0f*adj3*2.0f,0.8,_synsr);
+	auto& EC = l1->_envCtrlData;
+	EC._useNatEnv = false;
 
-	//printf( "phase<%f>\n", phase );
-	//printf( "adj2<%f>\n", adj2 );
-	s2 = shaper(s2,.9);
-	s2 = wrap(s2,-25.25f+adj2*23.0f);
-	s2 = _lpf.compute(s2)*0.6f;
+	auto ampenv = new RateLevelEnvData("AMPENV");
+	l1->_userAmpEnv = ampenv;
+	auto& aesegs = ampenv->_segments;
+	aesegs.push_back(EnvPoint{0,1});
+	aesegs.push_back(EnvPoint{0,0});
+	aesegs.push_back(EnvPoint{0,0});
+	aesegs.push_back(EnvPoint{0,1});
+	aesegs.push_back(EnvPoint{0,0});
+	aesegs.push_back(EnvPoint{0,0});
+	aesegs.push_back(EnvPoint{1,0});
 
-	s3 = _notch.compute(s3);
+	auto env2 = new RateLevelEnvData("ENV2`");
+	l1->_env2 = env2;
+	auto& e2segs = env2->_segments;
+	e2segs.push_back(EnvPoint{2,1});
+	e2segs.push_back(EnvPoint{0,1});
+	e2segs.push_back(EnvPoint{0,1});
+	e2segs.push_back(EnvPoint{0,0.5});
+	e2segs.push_back(EnvPoint{0,0});
+	e2segs.push_back(EnvPoint{0,0});
+	e2segs.push_back(EnvPoint{1,0});
 
-	phase += 0.0000005f;
+	auto env3 = new RateLevelEnvData("ENV3");
+	l1->_env3 = env3;
+	auto& e3segs = env3->_segments;
+	e3segs.push_back(EnvPoint{8,1});
+	e3segs.push_back(EnvPoint{0,1});
+	e3segs.push_back(EnvPoint{0,1});
+	e3segs.push_back(EnvPoint{0,0.5});
+	e3segs.push_back(EnvPoint{0,0});
+	e3segs.push_back(EnvPoint{0,0});
+	e3segs.push_back(EnvPoint{1,0});
 
-	return (s1+s2+s3)*0.33f;
-	//return s3;
-}*/
+	auto lfo1 = new LfoData;
+	lfo1->_name = "LFO1";
+	l1->_lfo1 = lfo1;
+	lfo1->_controller = "ON";
+	lfo1->_maxRate = 0.1;
+
+	auto& ALGD = l1->_algData;
+
+	ALGD._name = "ALG1";
+	ALGD._algID = 1;
+
+	if( 1 )
+	{
+		auto& F1 = l1->_f1Block;
+		F1._dspBlock = "2PARAM SHAPER";
+		F1._paramScheme = "EVN";
+		F1._blockIndex = 0;
+		F1._units = "dB";
+		F1._coarse = -60.0;
+	}
+	else if( 1 )
+	{
+		auto& F1 = l1->_f1Block;
+		F1._blockIndex = 0;
+		F1._dspBlock = "SHAPER";
+		F1._paramScheme = "AMT";
+		F1._units = "x";
+		F1._coarse = 0.1;
+	}
+	if( 0 )
+	{
+		auto& F2 = l1->_f2Block;
+		F2._paramScheme = "ODD";
+		F2._blockIndex = 1;
+		F2._units = "dB";
+		F2._coarse = -96.0;
+	}
+}
+
 
 

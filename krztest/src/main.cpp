@@ -13,10 +13,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 //static const int kdefaultprogID = 191;
-static const int kdefaultprogID = 184;
+static const int kdefaultprogID = 191;
 static int programID = 0;
 static int octave = 4;
 static bool dokeymaps = false;
+static bool dotestprogram = false;
 const programData* curProg = nullptr;
 
 std::map<int,programInst*> playingNotesMap;
@@ -115,7 +116,9 @@ void loadprog()
 {
     auto sd = the_synth->_SD;
 
-  if( dokeymaps )
+  if( dotestprogram )
+    curProg = sd->getTestProgram(programID);
+  else if( dokeymaps )
     curProg = sd->getKmTestProgram(programID);
   else
     curProg = sd->getProgram(programID);
@@ -273,6 +276,11 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
           if( ! down ) break;
           if( (octave+1) < 8 )
             octave++;
+          break;
+        case 'T':
+          if( ! down ) break;
+          dotestprogram = ! dotestprogram;
+          loadprog();
           break;
         case 'K':
           if( ! down ) break;
@@ -479,8 +487,7 @@ void runUI()
           loadprog();
         }
 
-        const char* prghead = curProg->_iskmtest ? "Keymap" : "Program";
-
+        const char* prghead = curProg->_role.c_str();
 
         hudstr += formatString("%s<%d:%s>\n", prghead,programID, curProg->_name.c_str() );
         drawtext( hudstr, 50,50, 1, 0,1,0 );

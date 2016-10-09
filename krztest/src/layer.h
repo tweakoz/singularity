@@ -222,7 +222,7 @@ struct layer
     float _masterGain = 0.0f;
     float _AENV[1024];
 
-    FPARAM _fp[3];
+    FPARAM _fp[4];
 
     controller_t _pchControl1,_pchControl2;
 

@@ -494,6 +494,7 @@ void getFParamAMT( fparam& fp );
 void getFParamWID( fparam& fp );
 void getFParamSEP( fparam& fp );
 void getFParamEVNODD( fparam& fp );
+void getFParamXFD( fparam& fp );
 
 ///////////////////////////////////////////////////////////////////////////////
 

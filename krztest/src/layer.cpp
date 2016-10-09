@@ -45,7 +45,7 @@ void layer::compute(outputBuffer& obuf)
     ///////////////////////
     // leave some time at the end to bview ENV hud
     ///////////////////////
-    if( _postdone>128 )
+    if( _postdone>64 )
     {
         _syn.freeLayer(this);
         return;
@@ -94,7 +94,9 @@ void layer::compute(outputBuffer& obuf)
     ////////////////////////////////////////
 
     bool bypassDSP = _syn._bypassDSP;
-    DspBlock* lastblock = _alg ? _alg->lastBlock() : nullptr;
+    DspBlock* lastblock = _alg 
+                        ? _alg->lastBlock() 
+                        : nullptr;
     bool doBlockStereo = bypassDSP 
                        ? false 
                        : lastblock ? (lastblock->_numOutputs==2) 
@@ -141,9 +143,9 @@ void layer::compute(outputBuffer& obuf)
         {
             for( int i=0; i<inumframes; i++ )
             {
-                float ampenv = _AENV[i];
+                //float ampenv = _AENV[i];
                 float o = ((rand()&0xffff)/32768.0f)-1.0f;
-                lyroutl[i] = o*ampenv;
+                lyroutl[i] = o;//*ampenv;
                 lyroutr[i] = 0.0f;//o*ampenv;
             }
         }
@@ -154,8 +156,8 @@ void layer::compute(outputBuffer& obuf)
 
             for( int i=0; i<inumframes; i++ )
             {
-                float ampenv = _AENV[i];
-                float o = sinf(_sinrepPH)*ampenv*_preDSPGAIN;
+                //float ampenv = _AENV[i];
+                float o = sinf(_sinrepPH)*_preDSPGAIN;
                 _sinrepPH += phaseinc;
                 lyroutl[i] = o;
                 lyroutr[i] = 0.0f;
@@ -166,8 +168,8 @@ void layer::compute(outputBuffer& obuf)
         for( int i=0; i<inumframes; i++ )
         {
             float rawsamp = _spOsc.compute();
-            float ampenv = _AENV[i];
-            float kmpblockOUT = rawsamp*ampenv*_preDSPGAIN;
+            //float ampenv = _AENV[i];
+            float kmpblockOUT = rawsamp*_preDSPGAIN;
             lyroutl[i] = kmpblockOUT;
             lyroutr[i] = 0.0f;//kmpblockOUT;
         }
@@ -187,7 +189,7 @@ void layer::compute(outputBuffer& obuf)
             {
                 float ampenv = _AENV[i];
                 //float tgain = ampenv*_postDSPGAIN*_preDSPGAIN;
-                float tgain = _postDSPGAIN*_masterGain;
+                float tgain = _postDSPGAIN*_masterGain;//*ampenv;
                 outl[i] += lyroutl[i]*tgain;
                 outr[i] += lyroutr[i]*tgain;
             }
@@ -198,7 +200,7 @@ void layer::compute(outputBuffer& obuf)
             {
                 float ampenv = _AENV[i];
                 //float tgain = ampenv*_postDSPGAIN*_preDSPGAIN;
-                float tgain = _postDSPGAIN*_masterGain;
+                float tgain = _postDSPGAIN*_masterGain;//*ampenv;
                 float inp = lyroutl[i]; 
                 outl[i] += inp*tgain*0.5f;
                 outr[i] += inp*tgain*0.5f;
@@ -210,7 +212,7 @@ void layer::compute(outputBuffer& obuf)
             {
                 float ampenv = _AENV[i];
                 //float tgain = ampenv*_postDSPGAIN*_preDSPGAIN;
-                float tgain = _postDSPGAIN*_masterGain;
+                float tgain = _postDSPGAIN*_masterGain;//*ampenv;
                 float inp = lyroutl[i]; 
                 outl[i] += inp*tgain;
                 outr[i] += inp*tgain;
@@ -250,9 +252,11 @@ void layer::compute(outputBuffer& obuf)
 
     for( int i=0; i<inumframes; i++ )
     {
+        float ampenv = _AENV[i];
         float l = _layerObuf._leftBuffer[i];
         float r = _layerObuf._rightBuffer[i];
         tailb[i] = doBlockStereo ? l+r : l;
+        tailb[i] *= ampenv;
     }
     //memcpy( _oscopebuffer+tailbegin, _layerObuf._leftBuffer, inumframes*4 );
 
@@ -414,7 +418,7 @@ void layer::keyOn( int note, const layerData* ld )
     const auto& F1 = ld->_f1Block;
     const auto& F2 = ld->_f2Block;
     const auto& F3 = ld->_f3Block;
-    const auto& AMP = ld->_ampBlock;
+    const auto& F4 = ld->_f4Block;
     const auto& ENVC = ld->_envCtrlData;
 
     _useNatEnv = ENVC._useNatEnv;
@@ -442,6 +446,7 @@ void layer::keyOn( int note, const layerData* ld )
     _fp[0] = initFPARAM(F1);
     _fp[1] = initFPARAM(F2);
     _fp[2] = initFPARAM(F3);
+    _fp[3] = initFPARAM(F4);
 
     /////////////////////////////////////////////
 
@@ -520,13 +525,13 @@ void layer::keyOn( int note, const layerData* ld )
 
         updateSampSRRatio();
 
-        float outputPAD = decibel_to_linear_amp_ratio(AMP._pad);
-        float ampCOARSE = decibel_to_linear_amp_ratio(AMP._coarse);
+        //float outputPAD = decibel_to_linear_amp_ratio(F4._pad);
+        //float ampCOARSE = decibel_to_linear_amp_ratio(F4._coarse);
 
         //_totalGain = sample->_linGain* region->_linGain; // * _layerGain * outputPAD * ampCOARSE;
 
         _preDSPGAIN = sample->_linGain* region->_linGain;
-        _postDSPGAIN = _layerGain * outputPAD * ampCOARSE;
+        _postDSPGAIN = _layerGain;// * outputPAD * ampCOARSE;
 
         ///////////////////////////////////////
         //  trigger sample playback oscillator
