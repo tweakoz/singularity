@@ -132,6 +132,7 @@ struct RateLevelEnvInst
     float _decAdjust;
     float _relAdjust;
     float _curval;
+    float _filtval;
     float _dstval;
     int _framesrem;
     bool _released;
