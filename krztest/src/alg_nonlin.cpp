@@ -58,7 +58,7 @@ TWOPARAM_SHAPER::TWOPARAM_SHAPER( const DspBlockData& dbd )
     return sinf(index); ///adj;
 }*/
 
-void TWOPARAM_SHAPER::doKeyOn(layer*l)
+void TWOPARAM_SHAPER::doKeyOn(const DspKeyOnInfo& koi)
 {
     ph1 = 0.0f;
     ph2 = 0.0f;

@@ -84,10 +84,12 @@ struct fparam
 	int _inputFiltAlg;  //12
 	int _inputMoreTSCR; //13
 	int _inputRESERVED; //14
+	int _input14;//15 (FineHz/KStart/OutputPanUL)
 	int _input15;//15 (FineHz/KStart/OutputPanUL)
 
 	fparamVar _varCoarseAdjust;
 	fparamVar _varFine;
+	fparamVar _var14;
 	fparamVar _var15;
 	fparamVar _varKeyStart;
 	fparamVar _varKeyTrack;

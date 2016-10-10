@@ -45,7 +45,7 @@ void PARAMETRIC_EQ::compute(dspBlockBuffer& obuf) //final
     //printf( "ff<%f> wid<%f>\n", ff, wid );
 
 }
-void PARAMETRIC_EQ::doKeyOn(layer*l) // final
+void PARAMETRIC_EQ::doKeyOn(const DspKeyOnInfo& koi) // final
 {   _filter.Clear();
 }
 
@@ -80,7 +80,7 @@ void BANDPASS_FILT::compute(dspBlockBuffer& obuf) //final
 
 }
 
-void BANDPASS_FILT::doKeyOn(layer*l) // final
+void BANDPASS_FILT::doKeyOn(const DspKeyOnInfo& koi) // final
 {   _filter.Clear();
 }
 
@@ -113,7 +113,7 @@ void BAND2::compute(dspBlockBuffer& obuf) //final
 
 }
 
-void BAND2::doKeyOn(layer*l) // final
+void BAND2::doKeyOn(const DspKeyOnInfo& koi) // final
 {   _filter.Clear();
 }
 
@@ -147,8 +147,48 @@ void NOTCH_FILT::compute(dspBlockBuffer& obuf) //final
 
 }
 
-void NOTCH_FILT::doKeyOn(layer*l) // final
+void NOTCH_FILT::doKeyOn(const DspKeyOnInfo& koi) // final
 {   _filter.Clear();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+DOUBLE_NOTCH_W_SEP::DOUBLE_NOTCH_W_SEP( const DspBlockData& dbd )
+    :DspBlock(dbd)
+{   _numParams = 3;        
+}
+
+void DOUBLE_NOTCH_W_SEP::compute(dspBlockBuffer& obuf) //final
+{
+    float pad = _dbd._pad;
+    int inumframes = obuf._numframes;
+    float* ubuf = obuf._upperBuffer;
+
+    float fc = _ctrl[0].eval();
+    float res = _ctrl[1].eval();
+    float sep = _ctrl[2].eval();
+    _fval[0] = fc;
+    _fval[1] = res;
+    _fval[2] = sep;
+    float ratio = cents_to_linear_freq_ratio(sep);
+
+    _filter1.SetWithRes(EM_NOTCH,fc,res);
+    _filter2.SetWithRes(EM_NOTCH,fc*ratio,res);
+
+    if(1)for( int i=0; i<inumframes; i++ )
+    {
+        _filter1.Tick(ubuf[i]*pad);
+        _filter2.Tick(_filter1.output);
+        ubuf[i] = _filter2.output;
+    }
+
+    //printf( "ff<%f> res<%f>\n", ff, res );
+
+}
+
+void DOUBLE_NOTCH_W_SEP::doKeyOn(const DspKeyOnInfo& koi) //final
+{   _filter1.Clear();
+    _filter2.Clear();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -165,7 +205,7 @@ void TWOPOLE_ALLPASS::compute(dspBlockBuffer& obuf) //final
     float* ubuf = obuf._upperBuffer;
 
     float fc = _ctrl[0].eval();
-    float wid = _ctrl[1].eval(false);
+    float wid = _ctrl[1].eval();
     _fval[0] = fc;
     _fval[1] = wid;
 
@@ -175,14 +215,14 @@ void TWOPOLE_ALLPASS::compute(dspBlockBuffer& obuf) //final
     if(1)for( int i=0; i<inumframes; i++ )
     {
         float f1 = _filterL.Tick(ubuf[i]*pad);
-        ubuf[i] = _filterH.Tick(f1);;
+        ubuf[i] = _filterH.Tick(f1);
     }
 
     //printf( "ff<%f> res<%f>\n", ff, res );
 
 }
 
-void TWOPOLE_ALLPASS::doKeyOn(layer*l) // final
+void TWOPOLE_ALLPASS::doKeyOn(const DspKeyOnInfo& koi) // final
 {   _filterL.Clear();
     _filterH.Clear();
 }
@@ -217,7 +257,7 @@ void TWOPOLE_LOWPASS::compute(dspBlockBuffer& obuf) //final
 
 }
 
-void TWOPOLE_LOWPASS::doKeyOn(layer*l) // final
+void TWOPOLE_LOWPASS::doKeyOn(const DspKeyOnInfo& koi) // final
 {   _filter.Clear();
 }
 
@@ -246,7 +286,7 @@ void LOPAS2::compute(dspBlockBuffer& obuf) //final
     }
 }
 
-void LOPAS2::doKeyOn(layer*l) // final
+void LOPAS2::doKeyOn(const DspKeyOnInfo& koi) // final
 {   _filter.Clear();
 }
 
@@ -275,7 +315,7 @@ void LP2RES::compute(dspBlockBuffer& obuf) //final
     }
 }
 
-void LP2RES::doKeyOn(layer*l) // final
+void LP2RES::doKeyOn(const DspKeyOnInfo& koi) // final
 {   _filter.Clear();
 }
 
@@ -295,13 +335,16 @@ void FOURPOLE_LOPASS_W_SEP::compute(dspBlockBuffer& obuf) //final
     float fc = _ctrl[0].eval();
     float res = _ctrl[1].eval();
     float sep = _ctrl[2].eval();
-    _fval[0] = fc;
+
+    _filtFC = 0.995*_filtFC + 0.005*fc;
+
+    _fval[0] = _filtFC;
     _fval[1] = res;
     _fval[2] = sep;
     float ratio = cents_to_linear_freq_ratio(sep);
 
-    _filter1.SetWithRes(EM_LPF,fc,res);
-    _filter2.SetWithRes(EM_LPF,fc*ratio,res);
+    _filter1.SetWithRes(EM_LPF,_filtFC,res);
+    _filter2.SetWithRes(EM_LPF,_filtFC*ratio,res);
 
     if(1)for( int i=0; i<inumframes; i++ )
     {
@@ -314,9 +357,10 @@ void FOURPOLE_LOPASS_W_SEP::compute(dspBlockBuffer& obuf) //final
 
 }
 
-void FOURPOLE_LOPASS_W_SEP::doKeyOn(layer*l) //final
+void FOURPOLE_LOPASS_W_SEP::doKeyOn(const DspKeyOnInfo& koi) //final
 {   _filter1.Clear();
     _filter2.Clear();
+    _filtFC = 0.0f;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -343,7 +387,7 @@ void LOPASS::compute(dspBlockBuffer& obuf) //final
     }
 }
 
-void LOPASS::doKeyOn(layer*l) //final
+void LOPASS::doKeyOn(const DspKeyOnInfo& koi) //final
 {   _filter.Clear();
 }
 
@@ -369,7 +413,7 @@ void HIPASS::compute(dspBlockBuffer& obuf) //final
     }
 }
 
-void HIPASS::doKeyOn(layer*l) //final
+void HIPASS::doKeyOn(const DspKeyOnInfo& koi) //final
 {   _filter.Clear();
 }
 
@@ -396,6 +440,6 @@ void ALPASS::compute(dspBlockBuffer& obuf) // final
     }
 }
 
-void ALPASS::doKeyOn(layer*l) // final
+void ALPASS::doKeyOn(const DspKeyOnInfo& koi) // final
 {   _filter.Clear();
 }

@@ -43,14 +43,17 @@ DspBlock::DspBlock(const DspBlockData& dbd)
 
 }
 
-void DspBlock::keyOn(layer*l)
+void DspBlock::keyOn(const DspKeyOnInfo& koi)
 {
-    _layer = l;
+    _layer = koi._layer;
 
     for( int i=0; i<_numParams; i++ )
-        _ctrl[i] = l->_fp[_baseIndex+i];
+    {
+        _ctrl[i] = _layer->_fp[_baseIndex+i];
+        _ctrl[i].keyOn(koi._key,koi._vel);
+    }
 
-    doKeyOn(l);
+    doKeyOn(koi);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -74,8 +77,10 @@ DspBlock* Alg::lastBlock() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Alg::keyOn(layer*l)
+void Alg::keyOn(DspKeyOnInfo& koi)
 {
+    auto l = koi._layer;
+
     assert(l!=nullptr);
 
     for( int i=0; i<4; i++ )
@@ -87,37 +92,48 @@ void Alg::keyOn(layer*l)
     const auto& F3D = ld->_f3Block;
     const auto& F4D = ld->_f4Block;
 
+    int numoutputs = 1;
+
+    koi._prv = nullptr;
+    auto procblock = [&numoutputs,&koi](DspBlock* thisblock,layer*l)
+    {
+        if( thisblock )
+        {
+            thisblock->keyOn(koi);
+            //numoutputs = block->_numOutputs;
+            koi._prv = thisblock;
+        }
+
+
+    };
+
     if( F1D._dspBlock.length() )
     {
         _block[0] = createDspBlock(F1D);
-        if( _block[0] )
-            _block[0]->keyOn(l);
+        procblock( _block[0],l );
         printf( "createF1<%s>\n",F1D._dspBlock.c_str() );
     }
     if( F2D._dspBlock.length() )
     {
         _block[1] = createDspBlock(F2D);
-        if( _block[1] )
-            _block[1]->keyOn(l);
+        procblock( _block[1],l );
         printf( "createF2<%s>\n",F2D._dspBlock.c_str() );
     }
     if( F3D._dspBlock.length() )
     {
         _block[2] = createDspBlock(F3D);
-        if( _block[2] )
-            _block[2]->keyOn(l);
+        procblock( _block[2],l );
         printf( "createF3<%s>\n",F3D._dspBlock.c_str() );
     }
     if( F4D._dspBlock.length() )
     {
         _block[3] = createDspBlock(F4D);
-        if( _block[3] )
-            _block[3]->keyOn(l);
+        procblock( _block[3],l );
         printf( "createF4<%s> b4<%p>\n",F4D._dspBlock.c_str(), _block[3] );
     }
     //const auto& F1D = ld->_ampBlock;
 
-    doKeyOn(l);
+    doKeyOn(koi);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -184,15 +200,15 @@ void Alg::compute(outputBuffer& obuf)
     }
 }
 
-void Alg2::doKeyOn(layer*l) // final
+void Alg2::doKeyOn(DspKeyOnInfo& koi) // final
 {
-    if( _block[2] )
+    /*if( _block[2] )
         _block[2]->_numOutputs=2;
     if( _block[3] )
     {
         _block[3]->_numInputs=2;
         _block[3]->_numOutputs=2;
-    }
+    }*/
 }
 
 void Alg2::compute(outputBuffer& obuf) // final
@@ -260,7 +276,7 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
 
     if( dbd._dspBlock == "XFADE")
         rval = new XFADE(dbd);
-    if( dbd._dspBlock == "XGAIN")
+    if( dbd._dspBlock == "x GAIN")
         rval = new XGAIN(dbd);
     if( dbd._dspBlock == "GAIN")
         rval = new GAIN(dbd);
@@ -283,6 +299,10 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
 
     if( dbd._dspBlock == "SINE")
         rval = new SINE(dbd);
+    if( dbd._dspBlock == "SAW")
+        rval = new SAW(dbd);
+    if( dbd._dspBlock == "SQUARE")
+        rval = new SQUARE(dbd);
     if( dbd._dspBlock == "SINE+")
         rval = new SINEPLUS(dbd);
     if( dbd._dspBlock == "SAW+")
@@ -305,6 +325,8 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
         rval = new FOURPOLE_LOPASS_W_SEP(dbd);
     if( dbd._dspBlock == "NOTCH FILTER" )
         rval = new NOTCH_FILT(dbd);
+    if( dbd._dspBlock == "DOUBLE NOTCH W/SEP" )
+        rval = new DOUBLE_NOTCH_W_SEP(dbd);
     if( dbd._dspBlock == "BANDPASS FILT" )
         rval = new BANDPASS_FILT(dbd);
     if( dbd._dspBlock == "BAND2" )

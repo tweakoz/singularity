@@ -1073,10 +1073,10 @@ void synth::onDrawHudPage3(float width, float height)
       auto alg = hudl->_alg;
 
       float xb = 1150;
-      float yb = 250;
+      float yb = 90;
       float dspw = 400;
-      float dsph = 200;
-      float yinc = dsph+20;
+      float dsph = 272;
+      float yinc = dsph+3;
 
       glColor4f(.7,.7,.3,1);
       PushOrtho(width,height);
@@ -1093,72 +1093,32 @@ void synth::onDrawHudPage3(float width, float height)
 
       PopOrtho();
 
-
-      yb = 250;
-      int ytb = 245;
+      yb = 90;
+      int ytb = 95;
       auto& layd = hudl->_layerData;
       auto& algd = layd->_algData;
 
       auto alghdr = formatString("DSP Algorithm: %s", algd._name.c_str() );
       drawtext( alghdr, xb+80, yb-30, fontscale, 1,1,1 );
 
-      for( int i=0; i<4; i++ )
+      //////////////////////
+
+      auto PanPadOut = [](const DspBlockData* dbd, int xt, int yt) -> int
       {
-         auto b = alg->_block[i];
-         if( b )
-         {
-            bool block_ena = _fblockEnable[i];
-
-            const auto& dbd = b->_dbd;
-            int fidx = b->_baseIndex;
-
-            auto name = b->_dbd._dspBlock;
-            int xt = xb+10;
-            int yt = ytb+30;
-            auto hdr = formatString("%s BLOCK: %s", dbd._name.c_str(), name.c_str() );
-            drawtext( hdr, xt, yt, fontscale, 1,1,1 );
-            hdr = formatString("INP<%d> OUT<%d>", b->_numInputs, b->_numOutputs );
-            drawtext( hdr, xt, yt+=20, fontscale, 1,1,1 );
-
-            auto drawfhud = [&b,&xt,&yt](int idx)
-            {
-                float tot = b->_fval[idx];
-                float coa = b->_ctrl[idx]._coarse;
-                float s1 = b->_ctrl[idx]._C1();
-                float s2 = b->_ctrl[idx]._C2();
-                char paramC = 'A'+idx;
-                auto text = formatString("P%c<%g> _c<%g>",paramC,tot,coa);
-                drawtext( text, xt, yt+=20, fontscale, 1,1,0 );
-                text = formatString("   _s1<%g> _s2<%g>",s1,s2);
-                drawtext( text, xt, yt+=20, fontscale, 1,1,0 );
-            };
-
-            if( b->_numParams>0 )
-            {
-                drawfhud(0);
-
-            }
-            if( b->_numParams>1 )
-            {
-                drawfhud(1);
-            }
-            if( b->_numParams>2 )
-            {
-                drawfhud(2);
-            }
-
-            float padDB = linear_amp_ratio_to_decibel(dbd._pad);
+            assert(dbd);
+            float padDB = linear_amp_ratio_to_decibel(dbd->_pad);
             auto text = formatString("PAD<%g dB>",padDB);
-            drawtext( text, xt, yt+=20, fontscale, 1,.8,.8 );
+            drawtext( text, xt, yt, fontscale, 1,.8,.8 );
 
-            if( dbd._name == "F3" or dbd._name == "F4" )
+            int h =20;
+
+            if( dbd->_name == "F3" or dbd->_name == "F4" )
             {
               //text = formatString("V15<0x%02x>",dbd._var15);
               //drawtext( text, xt, yt+=20, fontscale, 0.8,0.8,1 );
 
-
               std::string panmode;
-              switch( dbd._panMode )
+              switch( dbd->_panMode )
               {
                   case 0:
                     panmode = "Fixed";
@@ -1174,12 +1134,85 @@ void synth::onDrawHudPage3(float width, float height)
                     break;
               }
 
-              text = formatString("Pan<%d> Mode<%s>",dbd._pan, panmode.c_str() );
-              drawtext( text, xt, yt+=20, fontscale, 0.8,1,0.8 );
-
+              text = formatString("Pan<%d> Mode<%s>",dbd->_pan, panmode.c_str() );
+              drawtext( text, xt, yt+20, fontscale, 0.8,1,0.8 );
+              h += 20;
             }
+            return h;
+      };
+
+      //////////////////////
+
+      for( int i=0; i<4; i++ )
+      {
+         const DspBlockData* dbd = nullptr;
+         switch(i)
+         {
+            case 0:
+              dbd = & layd->_f1Block;
+              break;
+            case 1:
+              dbd = & layd->_f2Block;
+              break;
+            case 2:
+              dbd = & layd->_f3Block;
+              break;
+            case 3:
+              dbd = & layd->_f4Block;
+              break;
+         }
+
+         int xt = xb+10;
+         int yt = ytb+30;
+         auto name = dbd->_dspBlock;
+         if( name == "" )
+             name = "none";
+         auto text = formatString("%s BLOCK: %s", dbd->_name.c_str(), name.c_str() );
+         drawtext( text, xt, yt, fontscale, 1,1,1 );
+         yt += 20;
+         yt += PanPadOut( dbd, xt, yt );
+
+         auto b = alg->_block[i];
+
+         if( b )
+         {
+            bool block_ena = _fblockEnable[i];
+
+            int fidx = b->_baseIndex;
+
+            text = formatString("INP<%d> OUT<%d>", b->_numInputs, b->_numOutputs );
+            drawtext( text, xt, yt, fontscale, 1,1,1 );
+            yt += 20;
+
+            auto drawfhud = [&b,&xt,&yt](int idx)
+            {
+                float tot = b->_fval[idx];
+                float coa = b->_ctrl[idx]._coarse;
+                float s1 = b->_ctrl[idx]._C1();
+                float s2 = b->_ctrl[idx]._C2();
+                float kt = b->_ctrl[idx]._keyOff;
+                float vt = b->_ctrl[idx]._velOff;
+                char paramC = 'A'+idx;
+                auto text = formatString("P%c<%g> _c<%g>",paramC,tot,coa);
+                drawtext( text, xt, yt, fontscale, 1,1,0 );
+                yt += 20;
+                text = formatString("   _s1<%g> _s2<%g>",s1,s2);
+                drawtext( text, xt, yt, fontscale, 1,1,0 );
+                yt += 20;
+                text = formatString("   _kt<%g> _vt<%g>",kt,vt);
+                drawtext( text, xt, yt, fontscale, 1,1,0 );
+                yt += 20;
+            };
+
+            if( b->_numParams>0 )
+                drawfhud(0);
+            if( b->_numParams>1 )
+                drawfhud(1);
+            if( b->_numParams>2 )
+                drawfhud(2);
 
          }
+
          yb += yinc;
          ytb += yinc;
       }

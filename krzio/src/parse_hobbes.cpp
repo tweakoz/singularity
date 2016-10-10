@@ -32,6 +32,7 @@ void filescanner::parseHobbes(	const datablock& db,
 	hfp._inputFiltAlg = db.GetTypedData<u8>(it);
 	hfp._inputMoreTSCR = db.GetTypedData<u8>(it);
 	hfp._inputRESERVED = db.GetTypedData<u8>(it);
+	hfp._input14 = hfp._inputRESERVED;
 	hfp._input15 = db.GetTypedData<u8>(it);
 
 	hfp._blockScheme = getDspBlockScheme( hfp._inputALG );
@@ -118,7 +119,9 @@ void filescanner::parseHobbes(	const datablock& db,
 	hfp._outputFiltAlg = formatString("%d",hfp._inputFiltAlg>>2);
 
 
+    hfp._var14.set<int>("Var14","???","%d", (int) hfp._input14 );
     hfp._var15.set<int>("Var15","???","%d", (int) hfp._input15 );
+	
 
 	if( hfp._blockScheme == "AMP" )
 		getFParamAMP(hfp);

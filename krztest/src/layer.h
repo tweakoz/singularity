@@ -175,7 +175,7 @@ struct layer
     layer(synth& syn);
 
     void compute(outputBuffer& obuf);
-    void keyOn( int note, const layerData* ld );
+    void keyOn( int note, int vel, const layerData* ld );
     void keyOff();
     void reset();
     controller_t getController(const std::string& n) const;

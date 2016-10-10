@@ -59,7 +59,7 @@ void getFParamPCH( fparam& fp )
     int maxDpt = getVelTrack98(fp._inputMaxDepth );
 
     //int fineHZ = makeSigned(fp._inputFineHZKST);
-    
+
     fp._varCoarseAdjust.set<int>("Coarse","st","%%d", course);
     fp._varFine.set<int>("Fine","ct","%%d", fine);
     fp._varKeyTrack.set<int>("KeyTrack","ct/key","%%d", keytrk);
@@ -274,6 +274,8 @@ void filescanner::fparamOutput(const fparam& fp, const std::string& blkname, rap
         fparamVarOutput( fp._varCoarseAdjust, blkname, jsono );
     if( fp._varFine )
         fparamVarOutput( fp._varFine, blkname, jsono );
+    if( fp._var14 )
+        fparamVarOutput( fp._var14, blkname, jsono );
     if( fp._var15 )
         fparamVarOutput( fp._var15, blkname, jsono );
     if( fp._varKeyStart )

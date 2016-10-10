@@ -177,14 +177,6 @@ FunData* VastObjectsDB::parseFun( const rapidjson::Value& jo, const std::string&
 
 void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 {
-	//////////////////////////////////
-	// default evaluator
-	//////////////////////////////////
-
-	fblk._mods._evaluator = [](float coarse, float s1, float s2) -> float
-	{
-		return coarse+s1+s2;
-	};
 
 	//////////////////////////////////
 
@@ -192,6 +184,22 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 		fblk._keyTrack = fseg["KeyTrack"]["Value"].GetFloat();
 	if( fseg.HasMember("VelTrack") )
 		fblk._velTrack = fseg["VelTrack"]["Value"].GetFloat();
+	float keytrack = fblk._keyTrack;
+	float veltrack = fblk._velTrack;
+
+	//////////////////////////////////
+	// default evaluator
+	//////////////////////////////////
+
+	fblk._mods._evaluator = [=](float coarse, float s1, float s2,float ko, float vo) -> float
+	{
+		float kt = keytrack*ko;
+		float vt = veltrack*vo;
+		return coarse+s1+s2+kt+vt;
+	};
+
+	//////////////////////////////////
+
 	if( fseg.HasMember("Coarse") )
 	{	auto& c = fseg["Coarse"];
 		assert(c.HasMember("Value"));
@@ -199,8 +207,57 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 		auto& v = c["Value"];
 		switch( v.GetType() )
 		{	case kNumberType:
+			{
 				fblk._coarse = v.GetFloat();
+
+				if( fseg.HasMember("PARAM_SCHEME") )
+				{
+					if( fseg["PARAM_SCHEME"].GetString() == std::string("PCH") )
+					{
+						assert(c["Unit"]=="st");
+						fblk._mods._evaluator = [=](float coarse, float s1, float s2,float ko, float vo) -> float
+						{
+							float kt = keytrack*ko;
+							float vt = veltrack*vo;
+							float totcents = (coarse*100)+s1+s2+kt+vt;
+							float ratio = cents_to_linear_freq_ratio(totcents);
+							return ratio;
+						};
+
+					}
+					else if( fseg["PARAM_SCHEME"].GetString() == std::string("POS") )
+					{
+						assert(c["Unit"]=="pct");
+						fblk._mods._evaluator = [=](float coarse, float s1, float s2,float ko, float vo) -> float
+						{
+							float kt = keytrack*ko;
+							float vt = veltrack*vo;
+							float x = (coarse)+s1+s2+kt+vt;
+							return clip_float(x,-100,100);
+						};
+
+					}
+					else if( fseg["PARAM_SCHEME"].GetString() == std::string("AMP") )
+					{
+						assert(c["Unit"]=="dB");
+						
+						fblk._mods._evaluator = [=](float coarse, float s1, float s2,float ko, float vo) -> float
+						{
+							float vt = lerp(-veltrack,0.0f,vo);
+							float kt = keytrack*ko;
+							float x = (coarse)+s1+s2+kt+vt;
+							//printf( "vt<%f> kt<%f> x<%f>\n", vt, kt, x );
+							return clip_float(x,-10,10);
+						};
+
+					}
+				}
+
+
+
+
 				break;
+			}
 			case kStringType:
 			{	auto toks = SplitString(v.GetString(), ' ');
 				auto snote = toks[0];
@@ -228,9 +285,11 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 				assert(c["Unit"]=="nt");
 
 				// note/cent evaluator
-				fblk._mods._evaluator = [](float coarseHz, float s1Cents, float s2Cents) -> float
+				fblk._mods._evaluator = [=](float coarseHz, float s1Cents, float s2Cents, float ko, float vo) -> float
 				{
-					float totcents = s1Cents+s2Cents;
+					float ktcents = keytrack*ko;
+					float vtcents = veltrack*vo;
+					float totcents = s1Cents+s2Cents+ktcents+vtcents;
 					float ratio = cents_to_linear_freq_ratio(totcents);
 					//printf( "fbase<%f> totc<%f> ratio<")
 					return coarseHz*ratio;

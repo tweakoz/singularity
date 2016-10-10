@@ -45,7 +45,7 @@ void layer::compute(outputBuffer& obuf)
     ///////////////////////
     // leave some time at the end to bview ENV hud
     ///////////////////////
-    if( _postdone>1024 )
+    if( _postdone>64 )
     {
         _syn.freeLayer(this);
         return;
@@ -187,9 +187,7 @@ void layer::compute(outputBuffer& obuf)
         {
             for( int i=0; i<inumframes; i++ )
             {
-                float ampenv = _AENV[i];
-                //float tgain = ampenv*_postDSPGAIN*_preDSPGAIN;
-                float tgain = _postDSPGAIN*_masterGain;//*ampenv;
+                float tgain = _postDSPGAIN*_masterGain;
                 outl[i] += lyroutl[i]*tgain;
                 outr[i] += lyroutr[i]*tgain;
             }
@@ -198,9 +196,7 @@ void layer::compute(outputBuffer& obuf)
         {
             for( int i=0; i<inumframes; i++ )
             {
-                float ampenv = _AENV[i];
-                //float tgain = ampenv*_postDSPGAIN*_preDSPGAIN;
-                float tgain = _postDSPGAIN*_masterGain;//*ampenv;
+                float tgain = _postDSPGAIN*_masterGain;
                 float inp = lyroutl[i]; 
                 outl[i] += inp*tgain*0.5f;
                 outr[i] += inp*tgain*0.5f;
@@ -210,9 +206,7 @@ void layer::compute(outputBuffer& obuf)
         {
             for( int i=0; i<inumframes; i++ )
             {
-                float ampenv = _AENV[i];
-                //float tgain = ampenv*_postDSPGAIN*_preDSPGAIN;
-                float tgain = _postDSPGAIN*_masterGain;//*ampenv;
+                float tgain = _postDSPGAIN*_masterGain;
                 float inp = lyroutl[i]; 
                 outl[i] += inp*tgain;
                 outr[i] += inp*tgain;
@@ -252,11 +246,10 @@ void layer::compute(outputBuffer& obuf)
 
     for( int i=0; i<inumframes; i++ )
     {
-        float ampenv = _AENV[i];
         float l = _layerObuf._leftBuffer[i];
         float r = _layerObuf._rightBuffer[i];
         tailb[i] = doBlockStereo ? l+r : l;
-        tailb[i] *= ampenv;
+        //tailb[i] *= ampenv;
     }
     //memcpy( _oscopebuffer+tailbegin, _layerObuf._leftBuffer, inumframes*4 );
 
@@ -353,7 +346,7 @@ controller_t layer::getController(const std::string& srcn) const
         };
     else if( srcn == "KeyNum" )
         return [this]()
-        {   return this->_curnote;
+        {   return this->_curnote/float(127.0f);
         };
     else
     {
@@ -409,7 +402,7 @@ controller_t layer::getSRC2(const BlockModulationData& mods)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void layer::keyOn( int note, const layerData* ld )
+void layer::keyOn( int note, int vel, const layerData* ld )
 {
     std::lock_guard<std::mutex> lock(_mutex);
     assert(ld!=nullptr);
@@ -581,7 +574,13 @@ void layer::keyOn( int note, const layerData* ld )
     _alg = _layerData->_algData.createAlgInst();
     //assert(_alg);
     if(_alg)
-        _alg->keyOn(this);
+    {
+        DspKeyOnInfo koi;
+        koi._key = note;
+        koi._vel = vel;
+        koi._layer = this;
+        _alg->keyOn(koi);
+    }
 
     ///////////////////////////////////////
 

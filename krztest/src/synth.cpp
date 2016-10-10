@@ -49,7 +49,7 @@ void programInst::keyOn( int note, const programData* pd )
 				continue;
 		}
 
-		int vel = 64;
+		int vel = 96;
 
 		//printf( "lovel<%d>\n", ld->_loVel );
 		//printf( "hivel<%d>\n", ld->_hiVel );
@@ -66,7 +66,7 @@ void programInst::keyOn( int note, const programData* pd )
 
 		assert(ld!=nullptr);
 
-		l->keyOn(note,ld);
+		l->keyOn(note,vel,ld);
 		_layers.push_back(l);
 
 	}

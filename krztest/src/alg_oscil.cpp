@@ -30,7 +30,69 @@ void SINE::compute(dspBlockBuffer& obuf) //final
         ubuf[i] = saw;
     }
 }
-void SINE::doKeyOn(layer* l) //final
+void SINE::doKeyOn(const DspKeyOnInfo& koi) //final
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+SAW::SAW( const DspBlockData& dbd )
+    : DspBlock(dbd)
+    , _pblep(48000,PolyBLEP::SAWTOOTH)
+{   _numParams = 1;                
+}
+
+void SAW::compute(dspBlockBuffer& obuf) //final
+{
+    float centoff = _ctrl[0].eval();//,0.01f,100.0f);
+    _fval[0] = centoff;
+
+    int inumframes = obuf._numframes;
+    float* ubuf = obuf._upperBuffer;
+    float lyrcents = _layer->_curcents;
+    float frq = midi_note_to_frequency((centoff+lyrcents)*0.01);
+    float SR = _layer->_syn._sampleRate;
+    _pblep.setFrequency(frq);
+
+    //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
+    if(1) for( int i=0; i<inumframes; i++ )
+    {   float saw = _pblep.getAndInc();
+        saw *= _layer->_AENV[i];
+        ubuf[i] = saw;
+    }
+}
+void SAW::doKeyOn(const DspKeyOnInfo& koi) //final
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+SQUARE::SQUARE( const DspBlockData& dbd )
+    : DspBlock(dbd)
+    , _pblep(48000,PolyBLEP::SQUARE)
+{   _numParams = 1;                
+}
+
+void SQUARE::compute(dspBlockBuffer& obuf) //final
+{
+    float centoff = _ctrl[0].eval();//,0.01f,100.0f);
+    _fval[0] = centoff;
+
+    int inumframes = obuf._numframes;
+    float* ubuf = obuf._upperBuffer;
+    float lyrcents = _layer->_curcents;
+    float frq = midi_note_to_frequency((centoff+lyrcents)*0.01);
+    float SR = _layer->_syn._sampleRate;
+    _pblep.setFrequency(frq);
+
+    //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
+    if(1) for( int i=0; i<inumframes; i++ )
+    {   float saw = _pblep.getAndInc();
+        saw *= _layer->_AENV[i];
+        ubuf[i] = saw;
+    }
+}
+void SQUARE::doKeyOn(const DspKeyOnInfo& koi) //final
 {
 }
 
@@ -64,7 +126,7 @@ void SINEPLUS::compute(dspBlockBuffer& obuf) //final
         ubuf[i] = swplus;
     }
 }
-void SINEPLUS::doKeyOn(layer* l) //final
+void SINEPLUS::doKeyOn(const DspKeyOnInfo& koi) //final
 {
 }
 
@@ -100,7 +162,7 @@ void SAWPLUS::compute(dspBlockBuffer& obuf) //final
         ubuf[i] = swplus;
     }
 }
-void SAWPLUS::doKeyOn(layer* l) //final
+void SAWPLUS::doKeyOn(const DspKeyOnInfo& koi) //final
 {
 }
 
@@ -115,7 +177,7 @@ SWPLUSSHP::SWPLUSSHP( const DspBlockData& dbd )
 
 void SWPLUSSHP::compute(dspBlockBuffer& obuf) //final
 {
-    float centoff = _ctrl[0].eval()*100;//,0.01f,100.0f);
+    float centoff = _ctrl[0].eval();//,0.01f,100.0f);
     _fval[0] = centoff;
 
     int inumframes = obuf._numframes;
@@ -138,6 +200,6 @@ void SWPLUSSHP::compute(dspBlockBuffer& obuf) //final
         ubuf[i] = (swplusshp)*_layer->_AENV[i];
     }
 }
-void SWPLUSSHP::doKeyOn(layer* l) //final
+void SWPLUSSHP::doKeyOn(const DspKeyOnInfo& koi) //final
 {
 }

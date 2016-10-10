@@ -151,7 +151,7 @@ struct BlockModulationData
     float _src1Depth = 0.0f;
     float _src2MinDepth = 0.0f;
     float _src2MaxDepth = 0.0f;
-    evalit_t _evaluator = [](float c,float,float)->float{return c;};
+    evalit_t _evaluator = [](float c,float,float,float,float)->float{return c;};
 
 };
 
