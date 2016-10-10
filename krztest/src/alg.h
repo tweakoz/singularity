@@ -199,6 +199,13 @@ struct BANDPASS_FILT : public DspBlock
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(layer*l) final;
 };
+struct BAND2 : public DspBlock
+{
+    BAND2( const DspBlockData& dbd );
+    TrapSVF _filter;
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(layer*l) final;
+};
 struct NOTCH_FILT : public DspBlock
 {
     NOTCH_FILT( const DspBlockData& dbd );
@@ -275,6 +282,7 @@ struct Alg
     virtual int f3BlockCount() const { return 0; }
     virtual int f4BlockCount() const { return 0; }
     virtual void compute(outputBuffer& obuf);
+    virtual void doKeyOn(layer*l) {}
 
     void intoDspBuf(const outputBuffer& obuf, dspBlockBuffer& dspbuf);
     void intoOutBuf(outputBuffer& obuf, const dspBlockBuffer& dspbuf);
@@ -294,6 +302,7 @@ struct Alg2 : public Alg
 {
     int f1BlockCount() const final { return 2; }
     int f3BlockCount() const final { return 1; }
+    void doKeyOn(layer*l) final;
     void compute(outputBuffer& obuf) final;
 };
 struct Alg3 : public Alg

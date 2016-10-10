@@ -306,6 +306,24 @@ void VastObjectsDB::parseDspBlock( const Value& dseg, DspBlockData& dblk )
 	{	dblk._pad = decibel_to_linear_amp_ratio(dseg["Pad"].GetFloat());
 		//assert(false);
 	}
+	if( dseg.HasMember("Var15") )
+	{	dblk._var15 = dseg["Var15"]["Value"].GetInt();
+		//assert(false);
+
+		if( dblk._blockIndex >= 2 )
+		{
+			int v15 = dblk._var15;
+
+			int pan = (v15&0xf0)>>4;
+			if( pan>=9 )
+				pan = pan-16;
+
+			dblk._pan = pan;
+
+			dblk._panMode = (v15&0x0c)>>2;
+
+        }
+	}
 	parseFBlock(dseg,dblk);
 }
 
@@ -450,6 +468,10 @@ layerData* VastObjectsDB::parseLayer( const Value& jsonobj, programData* pd )
 	rval->_f2Block._blockIndex = 1;
 	rval->_f3Block._blockIndex = 2;
 	rval->_f4Block._blockIndex = 3;
+	rval->_f1Block._name = "F1";
+	rval->_f2Block._name = "F2";
+	rval->_f3Block._name = "F3";
+	rval->_f4Block._name = "F4";
 	//rval->_ampBlock._blockIndex = 3;
 	if( jsonobj.HasMember("F1") )
 		parseDspBlock(jsonobj["F1"],rval->_f1Block);

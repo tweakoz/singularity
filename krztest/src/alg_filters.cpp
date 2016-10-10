@@ -18,6 +18,7 @@ void PARAMETRIC_EQ::compute(dspBlockBuffer& obuf) //final
     float fc = _ctrl[0].eval();
     float wid = 2*_ctrl[1].eval();        
     float gain = _ctrl[2].eval();
+    float pad = _dbd._pad;
     //bool isneg = gain<0.0;
     //gain = sqrtf(fabs(gain));
     //if(isneg)
@@ -35,7 +36,7 @@ void PARAMETRIC_EQ::compute(dspBlockBuffer& obuf) //final
     if(1)for( int i=0; i<inumframes; i++ )
     {
         _filter.Tick(ubuf[i]);
-        float biq = _biquad.compute(ubuf[i]);
+        float biq = _biquad.compute(ubuf[i]*pad);
 
         //ubuf[i] = _filter.output*ling;
         ubuf[i] = biq;
@@ -57,6 +58,7 @@ BANDPASS_FILT::BANDPASS_FILT( const DspBlockData& dbd )
 
 void BANDPASS_FILT::compute(dspBlockBuffer& obuf) //final
 {
+    float pad = _dbd._pad;
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
 
@@ -70,7 +72,7 @@ void BANDPASS_FILT::compute(dspBlockBuffer& obuf) //final
 
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        _filter.Tick(ubuf[i]);
+        _filter.Tick(ubuf[i]*pad);
         ubuf[i] = _filter.output;
     }
 
@@ -84,6 +86,39 @@ void BANDPASS_FILT::doKeyOn(layer*l) // final
 
 ///////////////////////////////////////////////////////////////////////////////
 
+BAND2::BAND2( const DspBlockData& dbd )
+    : DspBlock(dbd)
+{   _numParams = 1;
+}
+
+void BAND2::compute(dspBlockBuffer& obuf) //final
+{
+    float pad = _dbd._pad;
+    int inumframes = obuf._numframes;
+    float* ubuf = obuf._upperBuffer;
+
+    float fc = _ctrl[0].eval();
+    
+    _fval[0] = fc;
+
+    _filter.SetWithBWoct(EM_BPF,fc,2.2f);
+
+    if(1)for( int i=0; i<inumframes; i++ )
+    {
+        _filter.Tick(ubuf[i]*pad);
+        ubuf[i] = _filter.output;
+    }
+
+    //printf( "ff<%f> wid<%f>\n", ff, wid );
+
+}
+
+void BAND2::doKeyOn(layer*l) // final
+{   _filter.Clear();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 NOTCH_FILT::NOTCH_FILT( const DspBlockData& dbd )
     :DspBlock(dbd)
 {   _numParams = 2;        
@@ -91,6 +126,7 @@ NOTCH_FILT::NOTCH_FILT( const DspBlockData& dbd )
 
 void NOTCH_FILT::compute(dspBlockBuffer& obuf) //final
 {
+    float pad = _dbd._pad;
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
 
@@ -103,7 +139,7 @@ void NOTCH_FILT::compute(dspBlockBuffer& obuf) //final
 
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        _filter.Tick(ubuf[i]);
+        _filter.Tick(ubuf[i]*pad);
         ubuf[i] = _filter.output;
     }
 
@@ -124,6 +160,7 @@ TWOPOLE_ALLPASS::TWOPOLE_ALLPASS( const DspBlockData& dbd )
 
 void TWOPOLE_ALLPASS::compute(dspBlockBuffer& obuf) //final
 {
+    float pad = _dbd._pad;
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
 
@@ -137,7 +174,7 @@ void TWOPOLE_ALLPASS::compute(dspBlockBuffer& obuf) //final
     //printf( "fc<%f>\n", fc );
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        float f1 = _filterL.Tick(ubuf[i]);
+        float f1 = _filterL.Tick(ubuf[i]*pad);
         ubuf[i] = _filterH.Tick(f1);;
     }
 
@@ -159,6 +196,7 @@ TWOPOLE_LOWPASS::TWOPOLE_LOWPASS( const DspBlockData& dbd )
 
 void TWOPOLE_LOWPASS::compute(dspBlockBuffer& obuf) //final
 {
+    float pad = _dbd._pad;
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
 
@@ -171,7 +209,7 @@ void TWOPOLE_LOWPASS::compute(dspBlockBuffer& obuf) //final
     //printf( "fc<%f>\n", fc );
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        _filter.Tick(ubuf[i]);
+        _filter.Tick(ubuf[i]*pad);
         ubuf[i] = _filter.output;
     }
 
@@ -194,6 +232,7 @@ LOPAS2::LOPAS2( const DspBlockData& dbd )
 
 void LOPAS2::compute(dspBlockBuffer& obuf) //final
 {
+    float pad = _dbd._pad;
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
     float fc = _ctrl[0].eval();
@@ -202,7 +241,7 @@ void LOPAS2::compute(dspBlockBuffer& obuf) //final
     _filter.SetWithRes(EM_LPF,fc,res);
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        _filter.Tick(ubuf[i]);
+        _filter.Tick(ubuf[i]*pad);
         ubuf[i] = _filter.output;
     }
 }
@@ -222,6 +261,7 @@ LP2RES::LP2RES( const DspBlockData& dbd )
 
 void LP2RES::compute(dspBlockBuffer& obuf) //final
 {
+    float pad = _dbd._pad;
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
     float fc = _ctrl[0].eval();
@@ -230,7 +270,7 @@ void LP2RES::compute(dspBlockBuffer& obuf) //final
     _filter.SetWithRes(EM_LPF,fc,res);
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        _filter.Tick(ubuf[i]);
+        _filter.Tick(ubuf[i]*pad);
         ubuf[i] = _filter.output;
     }
 }
@@ -248,6 +288,7 @@ FOURPOLE_LOPASS_W_SEP::FOURPOLE_LOPASS_W_SEP( const DspBlockData& dbd )
 
 void FOURPOLE_LOPASS_W_SEP::compute(dspBlockBuffer& obuf) //final
 {
+    float pad = _dbd._pad;
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
 
@@ -264,7 +305,7 @@ void FOURPOLE_LOPASS_W_SEP::compute(dspBlockBuffer& obuf) //final
 
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        _filter1.Tick(ubuf[i]);
+        _filter1.Tick(ubuf[i]*pad);
         _filter2.Tick(_filter1.output);
         ubuf[i] = _filter2.output;
     }
@@ -289,6 +330,7 @@ LOPASS::LOPASS( const DspBlockData& dbd )
 
 void LOPASS::compute(dspBlockBuffer& obuf) //final
 {
+    float pad = _dbd._pad;
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
     float fc = _ctrl[0].eval();
@@ -296,7 +338,7 @@ void LOPASS::compute(dspBlockBuffer& obuf) //final
     _filter.SetWithQ(EM_LPF,fc,0.5);
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        _filter.Tick(ubuf[i]);
+        _filter.Tick(ubuf[i]*pad);
         ubuf[i] = _filter.output;
     }
 }
@@ -314,6 +356,7 @@ HIPASS::HIPASS( const DspBlockData& dbd )
 
 void HIPASS::compute(dspBlockBuffer& obuf) //final
 {
+    float pad = _dbd._pad;
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
     float fc = _ctrl[0].eval();
@@ -321,7 +364,7 @@ void HIPASS::compute(dspBlockBuffer& obuf) //final
     _filter.SetWithRes(EM_HPF,fc,0.0f);
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        _filter.Tick(ubuf[i]);
+        _filter.Tick(ubuf[i]*pad);
         ubuf[i] = _filter.output;
     }
 }
@@ -341,6 +384,7 @@ ALPASS::ALPASS( const DspBlockData& dbd )
 
 void ALPASS::compute(dspBlockBuffer& obuf) // final
 {
+    float pad = _dbd._pad;
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
     float fc = _ctrl[0].eval();
@@ -348,7 +392,7 @@ void ALPASS::compute(dspBlockBuffer& obuf) // final
     _fval[0] = fc;
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        ubuf[i] = _filter.Tick(ubuf[i]);
+        ubuf[i] = _filter.Tick(ubuf[i]*pad);
     }
 }
 

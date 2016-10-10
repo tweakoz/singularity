@@ -45,7 +45,7 @@ void layer::compute(outputBuffer& obuf)
     ///////////////////////
     // leave some time at the end to bview ENV hud
     ///////////////////////
-    if( _postdone>64 )
+    if( _postdone>1024 )
     {
         _syn.freeLayer(this);
         return;

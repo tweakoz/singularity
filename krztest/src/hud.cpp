@@ -281,9 +281,21 @@ void synth::onDrawHudPage2(float width, float height)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void DrawBorder(int X1, int Y1, int X2, int Y2)
+void DrawBorder(int X1, int Y1, int X2, int Y2, int color=0)
 {
-    glColor4f(0.6,0.3,0.6,1);
+    switch(color)
+    {
+      case 0:
+        glColor4f(0.6,0.3,0.6,1);
+        break;
+      case 1:
+        glColor4f(0.0,0.0,0.0,1);
+        break;
+      case 2:
+        glColor4f(0.9,0.0,0.0,1);
+        break;
+    }
+
     glBegin(GL_LINES);
 
         glVertex3f(X1,Y1,0.0f);
@@ -1061,28 +1073,29 @@ void synth::onDrawHudPage3(float width, float height)
       auto alg = hudl->_alg;
 
       float xb = 1150;
-      float yb = 300;
+      float yb = 250;
       float dspw = 400;
-      float dsph = 150;
-      float yinc = dsph+50;
+      float dsph = 200;
+      float yinc = dsph+20;
 
       glColor4f(.7,.7,.3,1);
       PushOrtho(width,height);
       for( int i=0; i<4; i++ )
       {
          auto b = alg->_block[i];
+         int color = 2;
          if( b )
-         {
-           DrawBorder(xb,yb,xb+dspw,yb+dsph);
-           yb += yinc;
-         }
+            color = _fblockEnable[i] ? 0 : 1;
+         DrawBorder(xb,yb,xb+dspw,yb+dsph,color);
+         yb += yinc;
 
       }
 
       PopOrtho();
 
 
-      yb = 300;
+      yb = 250;
+      int ytb = 245;
       auto& layd = hudl->_layerData;
       auto& algd = layd->_algData;
 
@@ -1094,34 +1107,81 @@ void synth::onDrawHudPage3(float width, float height)
          auto b = alg->_block[i];
          if( b )
          {
+            bool block_ena = _fblockEnable[i];
+
             const auto& dbd = b->_dbd;
             int fidx = b->_baseIndex;
 
             auto name = b->_dbd._dspBlock;
-            int xt = xb+50;
-            int yt = yb+30;
-            auto hdr = formatString("BLOCK: %s", name.c_str() );
+            int xt = xb+10;
+            int yt = ytb+30;
+            auto hdr = formatString("%s BLOCK: %s", dbd._name.c_str(), name.c_str() );
             drawtext( hdr, xt, yt, fontscale, 1,1,1 );
+            hdr = formatString("INP<%d> OUT<%d>", b->_numInputs, b->_numOutputs );
+            drawtext( hdr, xt, yt+=20, fontscale, 1,1,1 );
 
-            auto drawfhud = [&b,&xt](int idx,float y)
+            auto drawfhud = [&b,&xt,&yt](int idx)
             {
-                auto text = formatString("F%d<%g>",idx+1,b->_fval[idx]);
-                drawtext( text, xt, y, fontscale, 1,1,0 );
+                float tot = b->_fval[idx];
+                float coa = b->_ctrl[idx]._coarse;
+                float s1 = b->_ctrl[idx]._C1();
+                float s2 = b->_ctrl[idx]._C2();
+                char paramC = 'A'+idx;
+                auto text = formatString("P%c<%g> _c<%g>",paramC,tot,coa);
+                drawtext( text, xt, yt+=20, fontscale, 1,1,0 );
+                text = formatString("   _s1<%g> _s2<%g>",s1,s2);
+                drawtext( text, xt, yt+=20, fontscale, 1,1,0 );
             };
 
             if( b->_numParams>0 )
-                drawfhud(0,yt+20);
+            {
+                drawfhud(0);
+
+            }
             if( b->_numParams>1 )
-                drawfhud(1,yt+40);
+            {
+                drawfhud(1);
+            }
             if( b->_numParams>2 )
-                drawfhud(2,yt+60);
+            {
+                drawfhud(2);
+            }
 
-            auto text = formatString("PAD<%f>",dbd._pad);
-            drawtext( text, xt, yt+100, fontscale, 1,1,1 );
-              //drawfhud(2,yt+60);
+            float padDB = linear_amp_ratio_to_decibel(dbd._pad);
+            auto text = formatString("PAD<%g dB>",padDB);
+            drawtext( text, xt, yt+=20, fontscale, 1,.8,.8 );
 
-            yb += yinc;
+            if( dbd._name == "F3" or dbd._name == "F4" )
+            {
+              //text = formatString("V15<0x%02x>",dbd._var15);
+              //drawtext( text, xt, yt+=20, fontscale, 0.8,0.8,1 );
+
+
+              std::string panmode;
+              switch( dbd._panMode )
+              {
+                  case 0:
+                    panmode = "Fixed";
+                    break;
+                  case 1:
+                    panmode = "MIDI+";
+                    break;
+                  case 2:
+                    panmode = "Auto";
+                    break;
+                  case 3:
+                    panmode = "Revrs";
+                    break;
+              }
+
+              text = formatString("Pan<%d> Mode<%s>",dbd._pan, panmode.c_str() );
+              drawtext( text, xt, yt+=20, fontscale, 0.8,1,0.8 );
+
+            }
+
          }
+         yb += yinc;
+         ytb += yinc;
       }
 
 }

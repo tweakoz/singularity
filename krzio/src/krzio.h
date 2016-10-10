@@ -84,11 +84,11 @@ struct fparam
 	int _inputFiltAlg;  //12
 	int _inputMoreTSCR; //13
 	int _inputRESERVED; //14
-	int _inputFineHZKST;//15
+	int _input15;//15 (FineHz/KStart/OutputPanUL)
 
 	fparamVar _varCoarseAdjust;
 	fparamVar _varFine;
-	fparamVar _varFineHZ;
+	fparamVar _var15;
 	fparamVar _varKeyStart;
 	fparamVar _varKeyTrack;
 	fparamVar _varVelTrack;
@@ -99,8 +99,10 @@ struct fparam
 	std::string _blockScheme;
 	std::string _algName;
 	std::string _blockName;
-	float _outputPAD;
 	std::string _outputFiltAlg;
+
+	int _blockIndex = -1;
+	float _outputPAD = 0.0f;
 
 };
 

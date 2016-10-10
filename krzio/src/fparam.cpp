@@ -52,16 +52,16 @@ void getFParamPCH( fparam& fp )
 {
     int course = makeSigned(fp._inputCourse);
     int fine = makeSigned(fp._inputFine);
-    int fineHZ = makeSigned(fp._inputFineHZKST);
     int keytrk = getKeyTrack85(fp._inputKeyTrack );
     int veltrk = getVelTrack98(fp._inputVelTrack );
     int depth = getVelTrack98(fp._inputDepth );
     int minDpt = getVelTrack98(fp._inputMinDepth );
     int maxDpt = getVelTrack98(fp._inputMaxDepth );
 
+    //int fineHZ = makeSigned(fp._inputFineHZKST);
+    
     fp._varCoarseAdjust.set<int>("Coarse","st","%%d", course);
     fp._varFine.set<int>("Fine","ct","%%d", fine);
-    fp._varFineHZ.set<float>("FineHZ","hz","%%0.1f", float(fineHZ)/10.0f);
     fp._varKeyTrack.set<int>("KeyTrack","ct/key","%%d", keytrk);
     fp._varVelTrack.set<int>("VelTrack","ct","%%d", veltrk);
     fp._varSrc1Depth.set<int>("Depth","ct","%%d", depth);
@@ -254,8 +254,6 @@ void filescanner::fparamVarOutput(const fparamVar& fpv, const std::string& blkna
 
     Value fpvout(kObjectType);
 
-    std::string fullname = blkname+" " + name+"("+unit+")";
-
     if( auto as_float = val.Try<float>() )
         AddMember(fpvout, "Value", as_float.value() );
     else if( auto as_int = val.Try<int>() )
@@ -276,8 +274,8 @@ void filescanner::fparamOutput(const fparam& fp, const std::string& blkname, rap
         fparamVarOutput( fp._varCoarseAdjust, blkname, jsono );
     if( fp._varFine )
         fparamVarOutput( fp._varFine, blkname, jsono );
-    if( fp._varFineHZ )
-        fparamVarOutput( fp._varFineHZ, blkname, jsono );
+    if( fp._var15 )
+        fparamVarOutput( fp._var15, blkname, jsono );
     if( fp._varKeyStart )
         fparamVarOutput( fp._varKeyStart, blkname, jsono );
 

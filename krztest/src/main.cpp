@@ -13,7 +13,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 //static const int kdefaultprogID = 191;
-static const int kdefaultprogID = 191;
+static const int kdefaultprogID = 41;
 static int programID = 0;
 static int octave = 4;
 static bool dokeymaps = false;
@@ -122,6 +122,8 @@ void loadprog()
     curProg = sd->getKmTestProgram(programID);
   else
     curProg = sd->getProgram(programID);
+
+  the_synth->resetFenables();
 
   assert(curProg);
 };
@@ -307,30 +309,46 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
           if( down || up )
             do_midikb( key, down );
           break;
-        case '1':
+        case 258:
+        {
           if( ! down ) break;
-          if( the_synth->_soloLayer != 0 )
-              the_synth->_soloLayer = 0;
-          else
+
+          int nl = curProg 
+                  ? curProg->_layerDatas.size()
+                  : 0;
+
+          the_synth->_soloLayer++;
+
+          if( the_synth->_soloLayer >= nl ) 
               the_synth->_soloLayer = -1;
-            break;
-        case '2':
-          if( ! down ) break;
-          if( the_synth->_soloLayer != 1 )
-              the_synth->_soloLayer = 1;
-          else
-              the_synth->_soloLayer = -1;
-            break;
-        case '3':
-          if( ! down ) break;
-          if( the_synth->_soloLayer != 2 )
-              the_synth->_soloLayer = 2;
-          else
-              the_synth->_soloLayer = -1;
-            break;
-        case '4':
+
+
+          the_synth->resetFenables();
+
+          printf( "inclayer: %d nl<%d>\n", the_synth->_soloLayer, nl);
+
+          break;
+
+        }
+        case 96: // '`'
           if( ! down ) break;
           the_synth->_testtone = ! the_synth->_testtone;
+          break;
+        case '1':
+          if( ! down ) break;
+          the_synth->_fblockEnable[0] = ! the_synth->_fblockEnable[0];
+          break;
+        case '2':
+          if( ! down ) break;
+          the_synth->_fblockEnable[1] = ! the_synth->_fblockEnable[1];
+          break;
+        case '3':
+          if( ! down ) break;
+          the_synth->_fblockEnable[2] = ! the_synth->_fblockEnable[2];
+          break;
+        case '4':
+          if( ! down ) break;
+          the_synth->_fblockEnable[3] = ! the_synth->_fblockEnable[3];
           break;
         case '5':
           if( ! down ) break;
@@ -394,7 +412,6 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
            break;
         }
         default:
-            printf( "key<%c> act<%d>\n", key, action );
           break;
     }
 }

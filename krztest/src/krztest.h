@@ -53,7 +53,8 @@ struct synth
 	void onDrawHudPage2(float w, float h);
 	void onDrawHudPage3(float w, float h);
 
-	const programInst* _curProgram;
+	void resetFenables();
+
 	outputBuffer _obuf;
 	float _sampleRate;
 	float _dt;
@@ -63,8 +64,10 @@ struct synth
 	std::queue<layer*> _deactiveateVoiceQ;
 	std::set<programInst*> _freeProgInst;
 	std::set<programInst*> _activeProgInst;
-	int _soloLayer;
 	std::map<std::string,hudsamples_t> _hudsample_map;
+
+	int _soloLayer = -1;
+	bool _fblockEnable[4] = { true, true, true, true };
 	int _lnoteframe;
 	float _lnotetime;
 	float _testtonepi;

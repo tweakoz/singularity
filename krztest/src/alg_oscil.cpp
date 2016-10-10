@@ -53,10 +53,11 @@ void SINEPLUS::compute(dspBlockBuffer& obuf) //final
     float frq = midi_note_to_frequency((centoff+lyrcents)*0.01);
     float SR = _layer->_syn._sampleRate;
     _pblep.setFrequency(frq);
+    float pad = _dbd._pad;
 
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
     if(1) for( int i=0; i<inumframes; i++ )
-    {   float input = ubuf[i];
+    {   float input = ubuf[i]*pad;
         float saw = _pblep.getAndInc();
         saw *= _layer->_AENV[i];
         float swplus = input+saw;
@@ -86,13 +87,16 @@ void SAWPLUS::compute(dspBlockBuffer& obuf) //final
     float frq = midi_note_to_frequency((centoff+lyrcents)*0.01);
     float SR = _layer->_syn._sampleRate;
     _pblep.setFrequency(frq);
+    float pad = _dbd._pad;
+
+    //printf( "saw+ pad<%f>\n", pad );
 
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
     if(1) for( int i=0; i<inumframes; i++ )
-    {   float input = ubuf[i];
+    {   float input = ubuf[i]*pad;
         float saw = _pblep.getAndInc();
         saw *= _layer->_AENV[i];
-        float swplus = input+saw;
+        float swplus = input+(saw);
         ubuf[i] = swplus;
     }
 }
@@ -120,12 +124,13 @@ void SWPLUSSHP::compute(dspBlockBuffer& obuf) //final
     float frq = midi_note_to_frequency((centoff+lyrcents)*0.01);
     float SR = _layer->_syn._sampleRate;
     _pblep.setFrequency(frq);
+    float pad = _dbd._pad;
 
-    printf( "_dbd._pad<%f>\n", _dbd._pad );
+    //printf( "_dbd._pad<%f>\n", _dbd._pad );
 
 
     if(1) for( int i=0; i<inumframes; i++ )
-    {   float input = ubuf[i];//*_dbd._pad;///_layer->_AENV[i];
+    {   float input = ubuf[i]*pad;//*_dbd._pad;///_layer->_AENV[i];
         float saw = _pblep.getAndInc();
         //saw *= _layer->_AENV[i];
         float xxx = wrap(input+saw,1.0);

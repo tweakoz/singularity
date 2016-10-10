@@ -4,6 +4,8 @@
 
 DspBlock* createDspBlock( const DspBlockData& dbd );
 
+extern synth* the_synth;
+
 ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -115,7 +117,7 @@ void Alg::keyOn(layer*l)
     }
     //const auto& F1D = ld->_ampBlock;
 
-
+    doKeyOn(l);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -166,8 +168,14 @@ void Alg::compute(outputBuffer& obuf)
     {
         auto b = _block[i];
         if( b )
-        {   b->compute(_blockBuf);
-            touched = true;
+        {   
+            bool ena = the_synth->_fblockEnable[i];
+
+            if( ena )
+            {
+                b->compute(_blockBuf);
+                touched = true;
+            }
         }
     }
     if( touched )
@@ -176,15 +184,32 @@ void Alg::compute(outputBuffer& obuf)
     }
 }
 
+void Alg2::doKeyOn(layer*l) // final
+{
+    if( _block[2] )
+        _block[2]->_numOutputs=2;
+    if( _block[3] )
+    {
+        _block[3]->_numInputs=2;
+        _block[3]->_numOutputs=2;
+    }
+}
+
 void Alg2::compute(outputBuffer& obuf) // final
 {
     intoDspBuf(obuf,_blockBuf);
-    auto b0 = _block[0];
-    auto b1 = _block[2];
-    if( b0 )
-        b0->compute(_blockBuf);
-    if( b1 )
+    auto b1 = _block[0];
+    auto b2 = _block[1];
+    auto b3 = _block[2];
+    auto b4 = _block[3];
+    if( b1 && the_synth->_fblockEnable[0] )
         b1->compute(_blockBuf);
+    if( b2 && the_synth->_fblockEnable[1] )
+        b2->compute(_blockBuf);
+    if( b3 && the_synth->_fblockEnable[2] )
+        b3->compute(_blockBuf);
+    if( b4 && the_synth->_fblockEnable[3] )
+        b4->compute(_blockBuf);
     intoOutBuf(obuf,_blockBuf);
 } 
 void Alg3::compute(outputBuffer& obuf) // final
@@ -203,7 +228,7 @@ Alg* AlgData::createAlgInst() const
             return new Alg1;
             break;
         case 2:
-            return new Alg1;
+            return new Alg2;
             break;
         case 3:
             return new Alg1;
@@ -229,6 +254,10 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
 {
     DspBlock* rval = nullptr;
 
+    ////////////////////////
+    // amp/mix
+    ////////////////////////
+
     if( dbd._dspBlock == "XFADE")
         rval = new XFADE(dbd);
     if( dbd._dspBlock == "XGAIN")
@@ -241,10 +270,17 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
         rval = new PLUSAMP(dbd);
     if( dbd._dspBlock == "x AMP")
         rval = new XAMP(dbd);
-
-
     if( dbd._dspBlock == "AMP U   AMP L")
         rval = new AMPU_AMPL(dbd);
+    if( dbd._dspBlock == "PANNER" )
+        rval = new PANNER(dbd);
+    if( dbd._dspBlock == "AMP U  AMPL" )
+        rval = new AMPU_AMPL(dbd);
+
+    ////////////////////////
+    // osc/gen
+    ////////////////////////
+
     if( dbd._dspBlock == "SINE")
         rval = new SINE(dbd);
     if( dbd._dspBlock == "SINE+")
@@ -253,20 +289,41 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
         rval = new SAWPLUS(dbd);
     if( dbd._dspBlock == "SW+SHP" )
         rval = new SWPLUSSHP(dbd);
+
+    ////////////////////////
+    // filter
+    ////////////////////////
+
     if( dbd._dspBlock == "PARAMETRIC EQ" )
         rval = new PARAMETRIC_EQ(dbd);
+    if( dbd._dspBlock == "2POLE ALLPASS" )
+        rval = new TWOPOLE_ALLPASS(dbd);
+    if( dbd._dspBlock == "2POLE LOWPASS" )
+        rval = new TWOPOLE_LOWPASS(dbd);
+
     if( dbd._dspBlock == "4POLE LOPASS W/SEP" )
         rval = new FOURPOLE_LOPASS_W_SEP(dbd);
     if( dbd._dspBlock == "NOTCH FILTER" )
         rval = new NOTCH_FILT(dbd);
     if( dbd._dspBlock == "BANDPASS FILT" )
         rval = new BANDPASS_FILT(dbd);
-    if( dbd._dspBlock == "2POLE LOWPASS" )
-        rval = new TWOPOLE_LOWPASS(dbd);
+    if( dbd._dspBlock == "BAND2" )
+        rval = new BAND2(dbd);
     if( dbd._dspBlock == "LOPAS2" )
         rval = new LOPAS2(dbd);
     if( dbd._dspBlock == "LP2RES" )
         rval = new LOPAS2(dbd);
+    if( dbd._dspBlock == "LOPASS" )
+        rval = new LOPASS(dbd);
+    if( dbd._dspBlock == "HIPASS" )
+        rval = new HIPASS(dbd);
+    if( dbd._dspBlock == "ALPASS" )
+        rval = new ALPASS(dbd);
+
+    ////////////////////////
+    // nonlin
+    ////////////////////////
+
     if( dbd._dspBlock == "SHAPER" )
         rval = new SHAPER(dbd);
     if( dbd._dspBlock == "2PARAM SHAPER" )
@@ -275,18 +332,6 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
         rval = new WRAP(dbd);
     if( dbd._dspBlock == "DIST" )
         rval = new DIST(dbd);
-    if( dbd._dspBlock == "LOPASS" )
-        rval = new LOPASS(dbd);
-    if( dbd._dspBlock == "HIPASS" )
-        rval = new HIPASS(dbd);
-    if( dbd._dspBlock == "ALPASS" )
-        rval = new ALPASS(dbd);
-    if( dbd._dspBlock == "2POLE ALLPASS" )
-        rval = new TWOPOLE_ALLPASS(dbd);
-    if( dbd._dspBlock == "PANNER" )
-        rval = new PANNER(dbd);
-    if( dbd._dspBlock == "AMP U  AMPL" )
-        rval = new AMPU_AMPL(dbd);
 
     return rval;
 }

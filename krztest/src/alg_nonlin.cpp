@@ -12,13 +12,14 @@ SHAPER::SHAPER( const DspBlockData& dbd )
 
 void SHAPER::compute(dspBlockBuffer& obuf) //final
 {
+    float pad = _dbd._pad;
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
     float amt = _ctrl[0].eval();//,0.01f,100.0f);
     _fval[0] = amt;
     float la = decibel_to_linear_amp_ratio(amt);
     if(1) for( int i=0; i<inumframes; i++ )
-    {   float s1 = shaper(ubuf[i],la);
+    {   float s1 = shaper(ubuf[i]*pad,la);
         ubuf[i] = s1;
     }
 }
@@ -32,12 +33,13 @@ SHAPE2::SHAPE2( const DspBlockData& dbd )
 
 void SHAPE2::compute(dspBlockBuffer& obuf) //final
 {
+    float pad = _dbd._pad;
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
     float amt = _ctrl[0].eval();
     _fval[0] = amt;
     if(1) for( int i=0; i<inumframes; i++ )
-    {   float s1 = shaper(ubuf[i],amt);
+    {   float s1 = shaper(ubuf[i]*pad,amt);
         float s2 = shaper(s1,amt*0.75);
         ubuf[i] = s2;
     }
@@ -64,6 +66,7 @@ void TWOPARAM_SHAPER::doKeyOn(layer*l)
 
 void TWOPARAM_SHAPER::compute(dspBlockBuffer& obuf) //final
 {
+    float pad = _dbd._pad;
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
     float evn = _ctrl[0].eval();
@@ -78,7 +81,7 @@ void TWOPARAM_SHAPER::compute(dspBlockBuffer& obuf) //final
     //printf( "_dbd._pad<%f>\n", _dbd._pad );
     if(1) for( int i=0; i<inumframes; i++ )
     {
-        float le = ubuf[i]*decibel_to_linear_amp_ratio(evn);
+        float le = ubuf[i]*decibel_to_linear_amp_ratio(evn)*pad;
 
 
         //float e = (2.0f*powf(le,2.0f))-1.0f;
@@ -86,7 +89,7 @@ void TWOPARAM_SHAPER::compute(dspBlockBuffer& obuf) //final
         float index = le*le; //clip_float(powf(le,4),-12.0f,12.0f);
         float e = sinf(index*pi2*6); ///adj;
         
-        float lo = ubuf[i]*decibel_to_linear_amp_ratio(odd);
+        float lo = ubuf[i]*decibel_to_linear_amp_ratio(odd)*pad;
 
         index = clip_float(lo*6,-12.0f,12.0f);
         float o = sinf(index*pi2); ///adj;
@@ -126,11 +129,12 @@ DIST::DIST( const DspBlockData& dbd )
 
 void DIST::compute(dspBlockBuffer& obuf) //final
 {
+    float pad = _dbd._pad;
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
     float adj = _ctrl[0].eval();
     _fval[0] = adj;
-    float ratio = decibel_to_linear_amp_ratio(adj-30.0);
+    float ratio = decibel_to_linear_amp_ratio(adj-30.0)*pad;
 
     if(1) for( int i=0; i<inumframes; i++ )
     {   

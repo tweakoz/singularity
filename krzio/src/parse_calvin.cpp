@@ -47,7 +47,7 @@ void filescanner::parseCalvin(	const datablock& db,
 	u8 CCR = db.GetTypedData<u8>( it );										// 1C
 	KMP._playbackMode = db.GetTypedData<u8>( it );							// 1D
 	calvin->_algorithm = db.GetTypedData<u8>( it );							// 1E
-	pitchFP._inputFineHZKST = (int) db.GetTypedData<u8>( it );				// 1F
+	pitchFP._input15 = (int) db.GetTypedData<u8>( it );				// 1F
 	//printf( "  LAYER::ALG<%d>\n", ALG );
 	//printf( "  KEYMAP::Keymap1<%d> Keymap2<%d>\n", KEYMAP.mKeymap1, KEYMAP.mKeymap2 );
 	//printf( "  PITCH::Coarse/TS<%d> Fine<%d> FineHZ<%d>\n", PITCH.mCoarseTimbreShift, PITCH.mFine, PITCH.mFineHz );

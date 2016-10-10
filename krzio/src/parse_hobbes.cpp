@@ -32,7 +32,7 @@ void filescanner::parseHobbes(	const datablock& db,
 	hfp._inputFiltAlg = db.GetTypedData<u8>(it);
 	hfp._inputMoreTSCR = db.GetTypedData<u8>(it);
 	hfp._inputRESERVED = db.GetTypedData<u8>(it);
-	hfp._inputFineHZKST = db.GetTypedData<u8>(it);
+	hfp._input15 = db.GetTypedData<u8>(it);
 
 	hfp._blockScheme = getDspBlockScheme( hfp._inputALG );
 
@@ -43,22 +43,26 @@ void filescanner::parseHobbes(	const datablock& db,
 	switch(code)
 	{	case 0x50: // hobbes f1
 		{	hfp._blockName = "F1";
+			hfp._blockIndex = 0;
 			break;
 		}
 		case 0x51: // hobbes f2
 		{	hfp._blockName = "F2";
+			hfp._blockIndex = 1;
 			if( algCFG._w2==0 )
 				continuation_block = true;
 			break;
 		}
 		case 0x52:  // hobbes f3
 		{	hfp._blockName = "F3";
+			hfp._blockIndex = 2;
 			if( algCFG._w3==0 )
 				continuation_block = true;
 			break;
 		}
 		case 0x53: // hobbes f4 (amp)
 		{	hfp._blockName = "F4AMP";
+			hfp._blockIndex = 3;
 			if( algCFG._wa==0 )
 				continuation_block = true;
 			break;
@@ -113,6 +117,8 @@ void filescanner::parseHobbes(	const datablock& db,
 	}
 	hfp._outputFiltAlg = formatString("%d",hfp._inputFiltAlg>>2);
 
+
+    hfp._var15.set<int>("Var15","???","%d", (int) hfp._input15 );
 
 	if( hfp._blockScheme == "AMP" )
 		getFParamAMP(hfp);

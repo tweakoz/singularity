@@ -323,4 +323,11 @@ void synth::compute(int inumframes)
     }
 }
 
+void synth::resetFenables()
+{
+	for( int i=0; i<4; i++ )
+		_fblockEnable[i] = true;
+}
+
+
 

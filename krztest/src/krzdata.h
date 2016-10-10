@@ -172,6 +172,7 @@ struct KmpBlockData
 
 struct FBlockData
 {
+    std::string _name;
     std::string _units;
     float _coarse = 0.0f;
     float _keyTrack = 0.0f;
@@ -193,8 +194,12 @@ struct DspBlockData : public FBlockData
 {
     std::string _dspBlock;
     std::string _paramScheme;
+
     float _pad = 1.0f;
     int _blockIndex = -1;
+    int _pan = 0;
+    int _panMode = -1;
+    int _var15 = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

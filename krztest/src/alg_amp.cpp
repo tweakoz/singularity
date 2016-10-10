@@ -14,21 +14,35 @@ void AMP::compute(dspBlockBuffer& obuf) //final
 {
     float gain = _ctrl[0].eval();//,0.01f,100.0f);
 
-    _filt = 0.995*_filt + 0.005*gain;
-    float linG = decibel_to_linear_amp_ratio(_filt);
-    _fval[0] = _filt;
-
 
     int inumframes = obuf._numframes;
+    float* lbuf = obuf._lowerBuffer;
     float* ubuf = obuf._upperBuffer;
 
     float* aenv = _layer->_AENV;
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
-    if(1) for( int i=0; i<inumframes; i++ )
-    {   float inp = ubuf[i];
+    if(_numInputs==1) for( int i=0; i<inumframes; i++ )
+    {
+        _filt = 0.999*_filt + 0.001*gain;
+        float linG = decibel_to_linear_amp_ratio(_filt);
+       float inp = ubuf[i];
         float ae = aenv[i];
         ubuf[i] = inp*linG*ae;
     }
+    else if(_numInputs==2) for( int i=0; i<inumframes; i++ )
+    {
+        //printf("AMPSTER\n");
+        _filt = 0.999*_filt + 0.001*gain;
+        float linG = decibel_to_linear_amp_ratio(_filt);
+        float ae = aenv[i];
+
+       float inpU = ubuf[i];
+       float inpL = lbuf[i];
+        ubuf[i] = inpU*linG*ae;
+        lbuf[i] = inpL*linG*ae;
+    }
+
+    _fval[0] = _filt;
 }
 
 void AMP::doKeyOn(layer*l) //final
@@ -46,9 +60,6 @@ void PLUSAMP::compute(dspBlockBuffer& obuf) //final
 {
     float gain = _ctrl[0].eval();//,0.01f,100.0f);
 
-    _filt = 0.995*_filt + 0.005*gain;
-    float linG = decibel_to_linear_amp_ratio(_filt);
-    _fval[0] = _filt;
 
 
     int inumframes = obuf._numframes;
@@ -58,7 +69,10 @@ void PLUSAMP::compute(dspBlockBuffer& obuf) //final
     float* aenv = _layer->_AENV;
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
     if(1) for( int i=0; i<inumframes; i++ )
-    {   float inU = ubuf[i];
+    {
+        _filt = 0.999*_filt + 0.001*gain;
+        float linG = decibel_to_linear_amp_ratio(_filt);
+        float inU = ubuf[i];
         float inL = lbuf[i];
         float ae = aenv[i];
         float res = (inU+inL)*0.5*linG*ae*2.0;
@@ -66,6 +80,7 @@ void PLUSAMP::compute(dspBlockBuffer& obuf) //final
         lbuf[i] = res;
         ubuf[i] = res;
     }
+    _fval[0] = _filt;
 }
 
 void PLUSAMP::doKeyOn(layer*l) //final
@@ -83,9 +98,6 @@ void XAMP::compute(dspBlockBuffer& obuf) //final
 {
     float gain = _ctrl[0].eval();//,0.01f,100.0f);
 
-    _filt = 0.995*_filt + 0.005*gain;
-    float linG = decibel_to_linear_amp_ratio(_filt);
-    _fval[0] = _filt;
 
 
     int inumframes = obuf._numframes;
@@ -95,7 +107,10 @@ void XAMP::compute(dspBlockBuffer& obuf) //final
     float* aenv = _layer->_AENV;
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
     if(1) for( int i=0; i<inumframes; i++ )
-    {   float inU = ubuf[i];
+    {   
+        _filt = 0.999*_filt + 0.001*gain;
+        float linG = decibel_to_linear_amp_ratio(_filt);
+        float inU = ubuf[i];
         float inL = lbuf[i];
         float ae = aenv[i];
         float res = (inU*inL)*linG*ae;
@@ -103,6 +118,7 @@ void XAMP::compute(dspBlockBuffer& obuf) //final
         lbuf[i] = res;
         ubuf[i] = res;
     }
+    _fval[0] = _filt;
 }
 
 void XAMP::doKeyOn(layer*l) //final
@@ -212,12 +228,6 @@ void AMPU_AMPL::compute(dspBlockBuffer& obuf) //final
     float gainU = _ctrl[0].eval();//,0.01f,100.0f);
     float gainL = _ctrl[1].eval();//,0.01f,100.0f);
 
-    _filtU = 0.995*_filtU + 0.005*gainU;
-    _filtL = 0.995*_filtL + 0.005*gainL;
-    float linGU = decibel_to_linear_amp_ratio(_filtU);
-    float linGL = decibel_to_linear_amp_ratio(_filtL);
-    _fval[0] = _filtU;
-    _fval[1] = _filtL;
 
 
     int inumframes = obuf._numframes;
@@ -227,7 +237,12 @@ void AMPU_AMPL::compute(dspBlockBuffer& obuf) //final
     float* aenv = _layer->_AENV;
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
     if(1) for( int i=0; i<inumframes; i++ )
-    {   float inU = ubuf[i];
+    {   
+        _filtU = 0.999*_filtU + 0.001*gainU;
+        _filtL = 0.999*_filtL + 0.001*gainL;
+        float linGU = decibel_to_linear_amp_ratio(_filtU);
+        float linGL = decibel_to_linear_amp_ratio(_filtL);
+        float inU = ubuf[i];
         float inL = lbuf[i];
         float ae = aenv[i];
         float resU = inU*linGU*ae;
@@ -237,6 +252,8 @@ void AMPU_AMPL::compute(dspBlockBuffer& obuf) //final
         ubuf[i] = resU;
         lbuf[i] = resL;
     }
+    _fval[0] = _filtU;
+    _fval[1] = _filtL;
 }
 
 void AMPU_AMPL::doKeyOn(layer*l) //final
