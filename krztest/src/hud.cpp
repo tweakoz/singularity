@@ -1106,8 +1106,9 @@ void synth::onDrawHudPage3(float width, float height)
       auto PanPadOut = [](const DspBlockData* dbd, int xt, int yt) -> int
       {
             assert(dbd);
+            float v14DB = dbd->_v14Gain;
             float padDB = linear_amp_ratio_to_decibel(dbd->_pad);
-            auto text = formatString("PAD<%g dB>",padDB);
+            auto text = formatString("PAD<%g dB> V14G<%g dB>",padDB, v14DB);
             drawtext( text, xt, yt, fontscale, 1,.8,.8 );
 
             int h =20;

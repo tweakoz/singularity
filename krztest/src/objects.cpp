@@ -383,6 +383,21 @@ void VastObjectsDB::parseDspBlock( const Value& dseg, DspBlockData& dblk )
 
         }
 	}
+	if( dseg.HasMember("Var14") )
+	{	//assert(false);
+
+		if( dblk._blockIndex >= 2 )
+		{
+			int v14 = dseg["Var14"]["Value"].GetInt();
+			int ggg = v14&7;
+			int gain = 30-(ggg*6);
+			dblk._v14Gain = gain;
+			//dblk._pan = pan;
+
+			//dblk._panMode = (v15&0x0c)>>2;
+
+        }
+	}
 	parseFBlock(dseg,dblk);
 }
 

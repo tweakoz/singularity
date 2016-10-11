@@ -200,6 +200,8 @@ struct DspBlockData : public FBlockData
     int _pan = 0;
     int _panMode = -1;
     int _var15 = 0;
+    int _v14Gain = 0;
+
 };
 
 ///////////////////////////////////////////////////////////////////////////////

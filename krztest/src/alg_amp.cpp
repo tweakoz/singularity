@@ -45,11 +45,18 @@ void AMP::compute(dspBlockBuffer& obuf) //final
     auto u_lrmix = panBlend(_upan);
     auto l_lrmix = panBlend(_lpan);
 
+    const auto& layd = _layer->_layerData;
+    const auto& F3 = layd->_f3Block;
+    const auto& F4 = layd->_f4Block;
+    float UpperLinG = decibel_to_linear_amp_ratio(F4._v14Gain);
+    float LowerLinG = decibel_to_linear_amp_ratio(F3._v14Gain);
+
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
     if(_numInputs==1) for( int i=0; i<inumframes; i++ )
     {
-        _filt = 0.999*_filt + 0.001*gain;
+        _filt = 0.995*_filt + 0.005*gain;
         float linG = decibel_to_linear_amp_ratio(_filt);
+        linG *= UpperLinG;
         float inp = ubuf[i];
         float ae = aenv[i];
         float mono = clip_float(inp*linG*_dbd._pad*ae,kminclip,kmaxclip);
@@ -66,6 +73,8 @@ void AMP::compute(dspBlockBuffer& obuf) //final
 
        float inpU = ubuf[i]*totG;
        float inpL = lbuf[i]*totG;
+       inpU *= UpperLinG;
+       inpL *= LowerLinG;
 
         ubuf[i] = clip_float(inpU*u_lrmix.lmix+inpL*l_lrmix.lmix,kminclip,kmaxclip);
         lbuf[i] = clip_float(inpU*u_lrmix.rmix+inpL*l_lrmix.rmix,kminclip,kmaxclip);
@@ -98,8 +107,6 @@ PLUSAMP::PLUSAMP( const DspBlockData& dbd )
 void PLUSAMP::compute(dspBlockBuffer& obuf) //final
 {
     float gain = _ctrl[0].eval();//,0.01f,100.0f);
-
-
 
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
@@ -145,6 +152,12 @@ void XAMP::compute(dspBlockBuffer& obuf) //final
     float* lbuf = obuf._lowerBuffer;
 
     float* aenv = _layer->_AENV;
+    const auto& layd = _layer->_layerData;
+    const auto& F3 = layd->_f3Block;
+    const auto& F4 = layd->_f4Block;
+    float UpperLinG = decibel_to_linear_amp_ratio(F4._v14Gain);
+    float LowerLinG = decibel_to_linear_amp_ratio(F3._v14Gain);
+
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
     if(1) for( int i=0; i<inumframes; i++ )
     {   
@@ -153,7 +166,7 @@ void XAMP::compute(dspBlockBuffer& obuf) //final
         float inU = ubuf[i];
         float inL = lbuf[i];
         float ae = aenv[i];
-        float res = (inU*inL)*linG*ae;
+        float res = (inU*inL)*linG*ae*UpperLinG;
         res = clip_float(res,-1,1);
         lbuf[i] = res;
         ubuf[i] = res;
@@ -287,6 +300,13 @@ void AMPU_AMPL::compute(dspBlockBuffer& obuf) //final
     auto l_lrmix = panBlend(_lpan);
 
     float* aenv = _layer->_AENV;
+
+    const auto& layd = _layer->_layerData;
+    const auto& F3 = layd->_f3Block;
+    const auto& F4 = layd->_f4Block;
+    float UpperLinG = decibel_to_linear_amp_ratio(F4._v14Gain);
+    float LowerLinG = decibel_to_linear_amp_ratio(F3._v14Gain);
+
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
     if(1) for( int i=0; i<inumframes; i++ )
     {   
@@ -297,8 +317,8 @@ void AMPU_AMPL::compute(dspBlockBuffer& obuf) //final
         float inU = ubuf[i];
         float inL = lbuf[i];
         float ae = aenv[i];
-        float resU = inU*linGU*ae;
-        float resL = inL*linGU*ae;
+        float resU = inU*linGU*ae*UpperLinG;
+        float resL = inL*linGU*ae*LowerLinG;
 
         ubuf[i] = clip_float(resU*u_lrmix.lmix+resL*l_lrmix.lmix,kminclip,kmaxclip);
         lbuf[i] = clip_float(resU*u_lrmix.rmix+resL*l_lrmix.rmix,kminclip,kmaxclip);

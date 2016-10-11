@@ -336,7 +336,7 @@ void FOURPOLE_LOPASS_W_SEP::compute(dspBlockBuffer& obuf) //final
     float res = _ctrl[1].eval();
     float sep = _ctrl[2].eval();
 
-    _filtFC = 0.995*_filtFC + 0.005*fc;
+    _filtFC = 0.95*_filtFC + 0.05*fc;
 
     _fval[0] = _filtFC;
     _fval[1] = res;
