@@ -157,6 +157,13 @@ BiQuad::BiQuad()
 {
 }
 
+void BiQuad::Clear()
+{
+    _xm1 = 0.0f;
+    _xm2 = 0.0f;
+    _ym1 = 0.0f;
+    _ym2 = 0.0f;
+}
 float BiQuad::compute( float input )
 {   
     input = clip_float(input,-1,1);
@@ -172,7 +179,7 @@ float BiQuad::compute( float input )
 
     float output = outputp+outputn;
 
-    output = clip_float(output,-1,1);
+    output = clip_float(output,-4,4);
 
     _xm2 = _xm1;
     _xm1 = input;
@@ -330,6 +337,136 @@ void BiQuad::SetLpfNoQ( float kfco )
 
     _mfa1 = 2.0f*(KK-1.0f)*norm;
     _mfa2 = (1.0f+KK-KdQ)*norm;
+}
+
+void BiQuad::SetLpfWithPeakGain(float kfco, float peakGain)
+{
+    float Q = 0.5f;
+    float V = decibel_to_linear_amp_ratio(peakGain);
+    float K = std::tan(pi*kfco*ISR);
+    float KK = K*K;
+    float KdQ = K/Q;
+    float norm = 1.0f/(1.0f+KdQ+KK);
+    //printf( "V<%f> K<%f> Q<%f>\n", V, K, Q );
+    _mfb0 = (KK)*norm;
+    _mfb1 = 2*_mfb0;
+    _mfb2 = _mfb0;
+
+    _mfa1 = 2 * (KK - 1) * norm;
+    _mfa2 = (1 - KdQ + KK) * norm;
+
+    //norm = 1 / (1 + K / Q + K * K);
+    //a0 = K * K * norm;
+    //a1 = 2 * a0;
+    //a2 = a0;
+    
+    //b1 = 2 * (K * K - 1) * norm;
+    //b2 = (1 - K / Q + K * K) * norm;
+
+}
+void BiQuad::SetHpfWithPeakGain(float kfco, float peakGain)
+{
+    float Q = 0.5f;
+    float V = decibel_to_linear_amp_ratio(peakGain);
+    float K = std::tan(pi*kfco*ISR);
+    float KK = K*K;
+    float KdQ = K/Q;
+    float norm = 1.0f/(1.0f+KdQ+KK);
+    //printf( "V<%f> K<%f> Q<%f>\n", V, K, Q );
+    _mfb0 = norm;
+    _mfb1 = -2.0f*_mfb0;
+    _mfb2 = _mfb0;
+
+    _mfa1 = 2 * (KK - 1) * norm;
+    _mfa2 = (1 - KdQ + KK) * norm;
+
+    //norm = 1 / (1 + K / Q + K * K);
+    //a0 = 1 * norm;
+    //a1 = -2 * a0;
+    //a2 = a0;
+    //b1 = 2 * (K * K - 1) * norm;
+    //b2 = (1 - K / Q + K * K) * norm;
+
+}
+
+void BiQuad::SetParametric( float kfco, float wid, float peakGain )
+{
+    if(kfco>16000.0f)
+        kfco=16000.0f;
+    if( wid<0.1 )
+        wid = 0.1;
+
+    float w0 = kfco*PI2ISR;
+    float sii = std::log(2.0f)/2.0f*wid*w0/sin(w0);
+    float denom = 2.0f*std::sinh(sii);
+    float Q = 1.0f / denom;
+    float V = powf(10.0f, fabs(peakGain) / 20.0f);
+    //float V = decibel_to_linear_amp_ratio(peakGain);
+    float K = std::tan(pi*kfco*ISR);
+    if (peakGain >= 0.0f) {    // boost
+        float norm = 1.0f / (1.0f + 1.0f/Q * K + K * K);
+        _mfb0 = (1.0f + V/Q * K + K * K) * norm;
+        _mfb1 = 2.0f * (K * K - 1.0f) * norm;
+        _mfb2 = (1.0f - V/Q * K + K * K) * norm;
+        _mfa1 = _mfb1;
+        _mfa2 = (1.0f - 1.0f/Q * K + K * K) * norm;
+    }
+    else {    // cut
+        float norm = 1.0f / (1.0f + V/Q * K + K * K);
+        _mfb0 = (1.0f + 1.0f/Q * K + K * K) * norm;
+        _mfb1 = 2.0f * (K * K - 1.0f) * norm;
+        _mfb2 = (1.0f - 1.0f/Q * K + K * K) * norm;
+        _mfa1 = _mfb1;
+        _mfa2 = (1.0f - V/Q * K + K * K) * norm;
+    }
+}
+void BiQuad::SetLowShelf( float kfco, float peakGain )
+{
+    if(kfco>16000.0f)
+        kfco=16000.0f;
+    float V = decibel_to_linear_amp_ratio(peakGain);
+    float K = std::tan(pi*kfco*ISR);
+    if (peakGain >= 0) {    // boost
+        float norm = 1 / (1 + sqrtf(2) * K + K * K);
+        _mfb0 = (1 + sqrtf(2*V) * K + V * K * K) * norm;
+        _mfb1 = 2 * (V * K * K - 1) * norm;
+        _mfb2 = (1 - sqrtf(2*V) * K + V * K * K) * norm;
+        _mfa1 = 2 * (K * K - 1) * norm;
+        _mfa2 = (1 - sqrtf(2.0f) * K + K * K) * norm;
+    }
+    else {    // cut
+        float norm = 1 / (1 + sqrtf(2*V) * K + V * K * K);
+        _mfb0 = (1 + sqrtf(2.0f) * K + K * K) * norm;
+        _mfb1 = 2 * (K * K - 1) * norm;
+        _mfb2 = (1 - sqrtf(2.0f) * K + K * K) * norm;
+        _mfa1 = 2 * (V * K * K - 1) * norm;
+        _mfa2 = (1 - sqrtf(2*V) * K + V * K * K) * norm;
+    }
+
+}
+void BiQuad::SetHighShelf( float kfco, float peakGain )
+{
+    if(kfco>16000.0f)
+        kfco=16000.0f;
+    float V = decibel_to_linear_amp_ratio(peakGain);
+    float K = std::tan(pi*kfco*ISR);
+    if (peakGain >= 0) {    // boost
+        float norm = 1 / (1 + sqrtf(2) * K + K * K);
+        _mfb0 = (V + sqrtf(2*V) * K + K * K) * norm;
+        _mfb1 = 2 * (K * K - V) * norm;
+        _mfb2 = (V - sqrtf(2*V) * K + K * K) * norm;
+        _mfa1 = 2 * (K * K - 1) * norm;
+        _mfa2 = (1 - sqrtf(2) * K + K * K) * norm;
+    }
+    else {    // cut
+        float norm = 1 / (V + sqrtf(2*V) * K + K * K);
+        _mfb0 = (1 + sqrtf(2) * K + K * K) * norm;
+        _mfb1 = 2 * (K * K - 1) * norm;
+        _mfb2 = (1 - sqrtf(2) * K + K * K) * norm;
+        _mfa1 = 2 * (K * K - V) * norm;
+        _mfa2 = (V - sqrtf(2*V) * K + K * K) * norm;
+    }
+
 }
 
 /*static void SetAllpass( BiQuad& biq, float kfco )

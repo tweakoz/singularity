@@ -42,7 +42,12 @@ void LfoInst::keyOn(const LfoData* data)
         _mapper = [](float inp)->float{return 0.5f+sinf(inp*pi2)*0.5f;};
     else if( _data->_shape == "Triangle" )
         _mapper = [](float inp)->float{
-            float tri = fabs(fmod(inp,4.0f)-2.0f)-1.0f;
+            float tri = fabs(fmod(inp*4.0f,4.0f)-2.0f)-1.0f;
+            return tri;
+    };
+    else if( _data->_shape == "+Triangle" )
+        _mapper = [](float inp)->float{
+            float tri = fabs(fmod(inp*4.0f,4.0f)-2.0f)*0.5f;
             return tri;
     };
     else if( _data->_shape == "Square" )

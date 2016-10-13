@@ -7,6 +7,7 @@
 
 #include <math.h>
 #include <cmath>
+#include <stdio.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // decibel - A unit of amplitude ratio corresponding to the twentieth root of ten, approximately 1.122018454.
@@ -151,6 +152,31 @@ float clip_float( float in, float minn, float maxx )
 	else if( in > maxx )
 		in = maxx;
 	return in;
+}
+
+float smoothstep(float edge0, float edge1, float x)
+{
+    // Scale, bias and saturate x to 0..1 range
+    float y = clip_float((x - edge0)/(edge1 - edge0), 0.0, 1.0); 
+    //printf( "x<%f> y<%f>\n", x, y );
+    // Evaluate polynomial
+    return y*y*(3.0f - 2.0f*y);
+}
+
+float softsat(float x, float a)
+{
+	float mag = fabs(x);
+	bool neg = x<0.0f;
+	float rval = 0.0f;
+
+	if(mag < a)
+	  rval=mag;
+	if(mag > a)
+	  rval = a + (mag-a)/(1.0f+powf((mag-a)/(1.0f-a),2.0f));
+	if(mag > 1)
+	  rval = (a+1.0f)/2.0f;
+
+  return neg ? -rval : rval;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

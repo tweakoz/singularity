@@ -13,7 +13,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 //static const int kdefaultprogID = 191;
-static const int kdefaultprogID = 181;
+static const int kdefaultprogID = 129;
 static int programID = 0;
 static int octave = 4;
 static bool dokeymaps = false;
@@ -55,7 +55,7 @@ static int patestCallback(	const void *inputBuffer,
     unsigned int i;
     (void) inputBuffer; /* Prevent unused variable warning. */
     
-    the_synth->compute(framesPerBuffer);
+    the_synth->compute(framesPerBuffer,inputBuffer);
     const auto& obuf = the_synth->_obuf;
     
     for( i=0; i<framesPerBuffer; i++ )
@@ -78,7 +78,7 @@ void startupAudio()
 
     /* Open an audio I/O stream. */
     err = Pa_OpenDefaultStream( &pa_stream,
-                                0,          // no input channels 
+                                1,          // no input channels 
                                 2,          // stereo output 
                                 paFloat32,  // 32 bit floating point output 
                                 the_synth->_sampleRate,
@@ -138,6 +138,7 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     auto sd = the_synth->_SD;
 
 
+  //  printf( "key<%d>\n", key );
 
     auto do_midikb = [&]( int key, bool is_down )
     {
@@ -363,12 +364,16 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
           the_synth->_bypassDSP = ! the_synth->_bypassDSP;
           break;
         case ' ':
-          if( ! down ) break;
-          the_synth->_doModWheel = ! the_synth->_doModWheel;
+          if( down or up ) 
+            the_synth->_doModWheel = down; //! the_synth->_doModWheel;
           break;        
         case 257:
-          if( ! down ) break;
-          the_synth->_doPressure = ! the_synth->_doPressure;
+          if( down or up ) 
+            the_synth->_doPressure = down; //! the_synth->_doPressure;
+          break;        
+        case 340:
+          if( down or up ) 
+            the_synth->_doInput = down; //! the_synth->_doModWheel;
           break;        
         case 'Q':
           if( ! down ) break;

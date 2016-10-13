@@ -231,7 +231,7 @@ float RateLevelEnvInst::compute()
 
     _filtval = _filtval*0.995f + _curval*0.005f;
 
-    return clip_float(powf(_filtval,2.0f),-1.0f,1.0f);
+    return clip_float(powf(_filtval,4.0f),-1.0f,1.0f);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

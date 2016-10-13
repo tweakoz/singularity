@@ -311,11 +311,22 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
         rval = new SWPLUSSHP(dbd);
 
     ////////////////////////
+    // EQ
+    ////////////////////////
+
+    if( dbd._dspBlock == "PARA BASS" )
+        rval = new PARABASS(dbd);
+    if( dbd._dspBlock == "PARA MID" )
+        rval = new PARAMID(dbd);
+    if( dbd._dspBlock == "PARA TREBLE" )
+        rval = new PARATREBLE(dbd);
+    if( dbd._dspBlock == "PARAMETRIC EQ" )
+        rval = new PARAMETRIC_EQ(dbd);
+
+    ////////////////////////
     // filter
     ////////////////////////
 
-    if( dbd._dspBlock == "PARAMETRIC EQ" )
-        rval = new PARAMETRIC_EQ(dbd);
     if( dbd._dspBlock == "2POLE ALLPASS" )
         rval = new TWOPOLE_ALLPASS(dbd);
     if( dbd._dspBlock == "2POLE LOWPASS" )
@@ -323,8 +334,12 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
 
     if( dbd._dspBlock == "4POLE LOPASS W/SEP" )
         rval = new FOURPOLE_LOPASS_W_SEP(dbd);
+    if( dbd._dspBlock == "4POLE HIPASS W/SEP" )
+        rval = new FOURPOLE_HIPASS_W_SEP(dbd);
     if( dbd._dspBlock == "NOTCH FILTER" )
         rval = new NOTCH_FILT(dbd);
+    if( dbd._dspBlock == "NOTCH2" )
+        rval = new NOTCH2(dbd);
     if( dbd._dspBlock == "DOUBLE NOTCH W/SEP" )
         rval = new DOUBLE_NOTCH_W_SEP(dbd);
     if( dbd._dspBlock == "BANDPASS FILT" )
@@ -341,6 +356,10 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
         rval = new HIPASS(dbd);
     if( dbd._dspBlock == "ALPASS" )
         rval = new ALPASS(dbd);
+
+    if( dbd._dspBlock == "HIFREQ STIMULATOR" )
+        rval = new HIFREQ_STIMULATOR(dbd);
+
 
     ////////////////////////
     // nonlin

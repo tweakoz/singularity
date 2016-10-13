@@ -60,14 +60,19 @@ struct TrapAllpass
 struct BiQuad
 {
     BiQuad();
-
+    void Clear();
     float compute( float input );
     void SetLpfReson(float kfco, float krez);
+    void SetLpfWithPeakGain(float kfco, float peakg);
+    void SetHpfWithPeakGain(float kfco, float peakg);
     void SetBpfWithQ( float kfco, float Q, float peakGain );
     void SetBpfWithBWoct( float kfco, float BWoct, float peakGain );
     void SetNotchWithQ( float kfco, float Q, float peakGain );
     void SetNotchWithBWoct( float kfco, float BWoct, float peakGain );
     void SetLpfNoQ( float kfco );
+    void SetLowShelf( float kfco, float peakGain );
+    void SetHighShelf( float kfco, float peakGain );
+    void SetParametric( float kfco, float wid, float peakGain );
 
     float _xm1, _xm2;
     float _ym1, _ym2;

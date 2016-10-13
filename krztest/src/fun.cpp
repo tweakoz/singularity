@@ -74,13 +74,19 @@ void FunInst::keyOn(const layer* l, const FunData* data)
         };  
     else if( op=="Quantize B To A" )
         _op = [=]()->float{
-            float a = this->_a();
-            float b = this->_b();
-            float inva = 1.0f / a;
-            float bb = b*inva;
-            int ib = int(bb);
+            float a = fabs(this->_a());
+            int inumsteps = int(a*15.0f)+1;
 
-            return clip_float(ib,-1,1);///inva;
+            float b = this->_b();
+
+            if( a == 1 )
+                return clip_float(b,-1,1);
+
+            int ib = b*float(inumsteps);
+
+            float bb = float(ib)/float(inumsteps);
+
+            return clip_float(bb,-1,1);///inva;
         };  
     else if( op=="lowpass(f=a,b)" )
     {
@@ -90,6 +96,30 @@ void FunInst::keyOn(const layer* l, const FunData* data)
             float b = this->_b();
             float out = lowpass->compute(b);
             return out;
+        };
+    }
+    else if( op=="Sample B on A" )
+    {
+        auto state1 = new float(0.0f);
+        auto state2 = new float(0.0f);
+        _op = [=]()->float{
+            float a = this->_a();
+            float b = this->_b();
+            if(a>0.5f and (*state2)<0.5f )
+                (*state1) = b;
+            (*state2) = a;
+            return (*state1);
+        };
+    }
+    else if( op=="Track B While A" )
+    {
+        auto state1 = new float(0.0f);
+        _op = [=]()->float{
+            float a = this->_a();
+            float b = this->_b();
+            if(a>0.5f)
+                (*state1) = b;
+            return (*state1);
         };
     }
 }

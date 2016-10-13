@@ -39,7 +39,7 @@ struct synth
 
 	typedef std::vector<hudsample> hudsamples_t;
 
-	void compute(int inumframes);
+	void compute(int inumframes,const void* inputbuffer);
 
 	programInst* keyOn(int note, const programData* pd);
 	void keyOff(programInst* p);
@@ -55,6 +55,7 @@ struct synth
 
 	void resetFenables();
 
+	outputBuffer _ibuf;
 	outputBuffer _obuf;
 	float _sampleRate;
 	float _dt;
@@ -81,6 +82,7 @@ struct synth
 	bool _bypassDSP = false;
 	bool _doModWheel = false;
 	bool _doPressure = false;
+	bool _doInput = false;
 	float _masterGain = 0.25f;
 
 	VastObjectsDB* _objectDB;
@@ -101,6 +103,8 @@ std::vector<std::string> SplitString(const std::string& instr, char delim);
 
 ///////////////////////////////////////////////////////////////////////////////
 
+float softsat(float x, float a);
+float smoothstep(float edge0, float edge1, float x);
 float log_base( float base, float inp );
 float pow_base( float base, float inp );
 int round_to_nearest( float in );

@@ -256,14 +256,18 @@ void synth::keyOff(programInst* pinst)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void synth::compute(int inumframes)
+void synth::compute(int inumframes,const void* inputBuffer)
 {
+	_ibuf.resize(inumframes);
 	_obuf.resize(inumframes);
 
 	/////////////////////////////
 	// clear output buffer
 	/////////////////////////////
 
+	auto input = (const float*) inputBuffer;
+
+	auto ilb = _ibuf._leftBuffer;
 	auto lb = _obuf._leftBuffer;
 	auto rb = _obuf._rightBuffer;
 
@@ -271,6 +275,7 @@ void synth::compute(int inumframes)
 	{
 		lb[i] = 0.0f;
 		rb[i] = 0.0f;
+		ilb[i] = input[i];
 	}
 
 	/////////////////////////////

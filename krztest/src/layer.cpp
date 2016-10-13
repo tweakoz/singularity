@@ -45,7 +45,7 @@ void layer::compute(outputBuffer& obuf)
     ///////////////////////
     // leave some time at the end to bview ENV hud
     ///////////////////////
-    if( _postdone>64 )
+    if( _postdone>1 )
     {
         _syn.freeLayer(this);
         return;
@@ -143,11 +143,21 @@ void layer::compute(outputBuffer& obuf)
         {
             for( int i=0; i<inumframes; i++ )
             {
-                //float ampenv = _AENV[i];
                 float o = ((rand()&0xffff)/32768.0f)-1.0f;
-                lyroutl[i] = o;//*ampenv;
-                lyroutr[i] = 0.0f;//o*ampenv;
+                lyroutl[i] = o;
+                lyroutr[i] = 0.0f;
             }
+        }
+        else if( _syn._doInput )
+        {
+            auto ibuf = _syn._ibuf._leftBuffer;
+            for( int i=0; i<inumframes; i++ )
+            {
+                float o = ibuf[i]*8.0f;
+                lyroutl[i] = o;
+                lyroutr[i] = 0.0f;
+            }
+
         }
         else if( _syn._sinerep )
         {
@@ -156,7 +166,6 @@ void layer::compute(outputBuffer& obuf)
 
             for( int i=0; i<inumframes; i++ )
             {
-                //float ampenv = _AENV[i];
                 float o = sinf(_sinrepPH)*_preDSPGAIN;
                 _sinrepPH += phaseinc;
                 lyroutl[i] = o;
@@ -168,7 +177,6 @@ void layer::compute(outputBuffer& obuf)
         for( int i=0; i<inumframes; i++ )
         {
             float rawsamp = _spOsc.compute();
-            //float ampenv = _AENV[i];
             float kmpblockOUT = rawsamp*_preDSPGAIN;
             lyroutl[i] = kmpblockOUT;
             lyroutr[i] = 0.0f;//kmpblockOUT;
@@ -251,6 +259,8 @@ void layer::compute(outputBuffer& obuf)
         tailb[i] = doBlockStereo ? l+r : l;
         //tailb[i] *= ampenv;
     }
+
+    _layerTime += dt;
     //memcpy( _oscopebuffer+tailbegin, _layerObuf._leftBuffer, inumframes*4 );
 
 }
@@ -314,32 +324,24 @@ controller_t layer::getController(const std::string& srcn) const
         {   return 0.0f;
         };
     else if( srcn == "MPress" )
-        return [this]()
+    {
+        auto state = new float(0);
+        return [this,state]()
         {
-            if( _syn._doPressure )
-            {
-                static float fph = 0.0f;
-                fph += 0.01f;
-                float fv = 0.5f+sinf(fph)*0.5f;;
-                return fv;
-            }
-            else
-                return 0.0f;
+            float v = _syn._doPressure;
+            (*state) = (*state)*0.99+v*0.01;
+            return (*state);
         };
+    }
     else if( srcn == "MWheel" )
-        return [this]()
+    {    auto state = new float(0);
+        return [this,state]()
         {   
-            if( _syn._doModWheel )
-            {
-                static float fph = 0.0f;
-                fph += 0.003f;
-                float fv = 0.5f+sinf(fph)*0.5f;;
-                return fv;
-            }
-            else
-                return 0.0f;
-
+            float v = _syn._doModWheel;
+            (*state) = (*state)*0.99+v*0.01;
+            return (*state);
         };
+    }
     else if( srcn == "ON" )
         return [this]()
         {   return 1.0f;
@@ -347,6 +349,20 @@ controller_t layer::getController(const std::string& srcn) const
     else if( srcn == "KeyNum" )
         return [this]()
         {   return this->_curnote/float(127.0f);
+        };
+    else if( srcn == "MIDI(49)" )
+        return [this]()
+        {   
+            float lt = this->_layerTime;
+            float s = sinf(lt*pi2*8.0f);
+            s = (s>=0.0f) ? 1.0f : 0.0f;
+            return s;
+        };
+    else if( srcn == "RandV1" )
+        return [this]()
+        {   
+            float lt = -1.0f+float(rand()&0xffff)/32768.0f;
+            return lt;
         };
     else
     {
@@ -430,6 +446,8 @@ void layer::keyOn( int note, int vel, const layerData* ld )
         _fftbuffer[i] = 0.0f;
     }
 
+    _layerTime = 0.0f;
+
     /////////////////////////////////////////////
     
     _pchControl1 = getSRC1(PCH._mods);
@@ -474,6 +492,8 @@ void layer::keyOn( int note, int vel, const layerData* ld )
 
 
     auto region = km->getRegion(_sampselnote,64);
+
+    printf( "layer<%d> region<%p>\n", _ldindex, region );
     if( region )
     {
         assert(region);

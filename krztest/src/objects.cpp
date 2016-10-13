@@ -194,7 +194,7 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 	fblk._mods._evaluator = [=](float coarse, float s1, float s2,float ko, float vo) -> float
 	{
 		float kt = keytrack*ko;
-		float vt = veltrack*vo;
+		float vt = -veltrack*vo;
 		return coarse+s1+s2+kt+vt;
 	};
 
@@ -212,7 +212,9 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 
 				if( fseg.HasMember("PARAM_SCHEME") )
 				{
-					if( fseg["PARAM_SCHEME"].GetString() == std::string("PCH") )
+					auto scheme = fseg["PARAM_SCHEME"].GetString();
+
+					if( scheme == std::string("PCH") )
 					{
 						assert(c["Unit"]=="st");
 						fblk._mods._evaluator = [=](float coarse, float s1, float s2,float ko, float vo) -> float
@@ -225,7 +227,7 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 						};
 
 					}
-					else if( fseg["PARAM_SCHEME"].GetString() == std::string("POS") )
+					else if( scheme == std::string("POS") )
 					{
 						assert(c["Unit"]=="pct");
 						fblk._mods._evaluator = [=](float coarse, float s1, float s2,float ko, float vo) -> float
@@ -237,7 +239,21 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 						};
 
 					}
-					else if( fseg["PARAM_SCHEME"].GetString() == std::string("AMP") )
+					else if( scheme == std::string("AMP") )
+					{
+						assert(c["Unit"]=="dB");
+						
+						fblk._mods._evaluator = [=](float coarse, float s1, float s2,float ko, float vo) -> float
+						{
+							float vt = lerp(-veltrack,0.0f,vo);
+							float kt = keytrack*ko;
+							float x = (coarse)+s1+s2+kt+vt;
+							//printf( "vt<%f> kt<%f> x<%f>\n", vt, kt, x );
+							return clip_float(x,-10,10);
+						};
+
+					}
+					else if(  0) //scheme==std::string("EVN") or  scheme==std::string("ODD") )
 					{
 						assert(c["Unit"]=="dB");
 						

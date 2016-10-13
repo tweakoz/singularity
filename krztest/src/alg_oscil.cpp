@@ -192,7 +192,7 @@ void SWPLUSSHP::compute(dspBlockBuffer& obuf) //final
 
 
     if(1) for( int i=0; i<inumframes; i++ )
-    {   float input = ubuf[i]*pad;//*_dbd._pad;///_layer->_AENV[i];
+    {   float input = clip_float(ubuf[i]*pad,-1,1);//*_dbd._pad;///_layer->_AENV[i];
         float saw = _pblep.getAndInc();
         //saw *= _layer->_AENV[i];
         float xxx = wrap(input+saw,1.0);

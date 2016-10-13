@@ -211,10 +211,30 @@ struct DIST : public DspBlock
 // filter blocks
 ///////////////////////////////////////////////////////////////////////////////
 
+struct PARABASS : public DspBlock
+{
+    PARABASS( const DspBlockData& dbd );
+    BiQuad _biquad;
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
+struct PARAMID : public DspBlock
+{
+    PARAMID( const DspBlockData& dbd );
+    BiQuad _biquad;
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
+struct PARATREBLE : public DspBlock
+{
+    PARATREBLE( const DspBlockData& dbd );
+    BiQuad _biquad;
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
 struct PARAMETRIC_EQ : public DspBlock
 {
     PARAMETRIC_EQ( const DspBlockData& dbd );
-    TrapSVF _filter;
     BiQuad _biquad;
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(const DspKeyOnInfo& koi) final;
@@ -223,6 +243,7 @@ struct BANDPASS_FILT : public DspBlock
 {
     BANDPASS_FILT( const DspBlockData& dbd );
     TrapSVF _filter;
+    BiQuad _biquad;
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(const DspKeyOnInfo& koi) final;
 };
@@ -240,6 +261,13 @@ struct NOTCH_FILT : public DspBlock
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(const DspKeyOnInfo& koi) final;
 };
+struct NOTCH2 : public DspBlock
+{
+    NOTCH2( const DspBlockData& dbd );
+    TrapSVF _filter1;
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
 struct DOUBLE_NOTCH_W_SEP : public DspBlock
 {
     DOUBLE_NOTCH_W_SEP( const DspBlockData& dbd );
@@ -252,6 +280,7 @@ struct TWOPOLE_LOWPASS : public DspBlock
 {
     TWOPOLE_LOWPASS( const DspBlockData& dbd );
     TrapSVF _filter;
+    float _smoothFC;
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(const DspKeyOnInfo& koi) final;
 };
@@ -270,6 +299,15 @@ struct LP2RES : public DspBlock
 struct FOURPOLE_LOPASS_W_SEP : public DspBlock
 {
     FOURPOLE_LOPASS_W_SEP( const DspBlockData& dbd );
+    TrapSVF _filter1;
+    TrapSVF _filter2;
+    float _filtFC;
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
+struct FOURPOLE_HIPASS_W_SEP : public DspBlock
+{
+    FOURPOLE_HIPASS_W_SEP( const DspBlockData& dbd );
     TrapSVF _filter1;
     TrapSVF _filter2;
     float _filtFC;
@@ -300,6 +338,15 @@ struct TWOPOLE_ALLPASS : public DspBlock
     TWOPOLE_ALLPASS( const DspBlockData& dbd );
     TrapAllpass _filterL;
     TrapAllpass _filterH;
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
+struct HIFREQ_STIMULATOR : public DspBlock
+{
+    HIFREQ_STIMULATOR( const DspBlockData& dbd );
+    TrapSVF _filter1;
+    TrapSVF _filter2;
+    float _smoothFC;
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(const DspKeyOnInfo& koi) final;
 };

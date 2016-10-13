@@ -81,20 +81,23 @@ void TWOPARAM_SHAPER::compute(dspBlockBuffer& obuf) //final
     //printf( "_dbd._pad<%f>\n", _dbd._pad );
     if(1) for( int i=0; i<inumframes; i++ )
     {
-        float le = ubuf[i]*decibel_to_linear_amp_ratio(evn)*pad;
+        float u = ubuf[i]*pad;
+        float usq = u*u;
+        float le = usq*decibel_to_linear_amp_ratio(evn);
+        float lo = u*decibel_to_linear_amp_ratio(odd);
 
 
         //float e = (2.0f*powf(le,2.0f))-1.0f;
         //float e = ((2.0f*powf(le,2.0f))-1.0f)*1000.0f;//decibel_to_linear_amp_ratio(-evn);
-        float index = le*le; //clip_float(powf(le,4),-12.0f,12.0f);
-        float e = sinf(index*pi2*6); ///adj;
+        float index = clip_float(le*6,-12,12); //clip_float(powf(le,4),-12.0f,12.0f);
+       // index *= index;
+        float e = sinf(index*pi2); ///adj;
         
-        float lo = ubuf[i]*decibel_to_linear_amp_ratio(odd)*pad;
 
         index = clip_float(lo*6,-12.0f,12.0f);
         float o = sinf(index*pi2); ///adj;
 
-        float r = (e+o)*0.5f+_dbd._pad;
+        float r = (e+o)*0.5f;
         //r = wrap(r,-30);
         ubuf[i] = r;
     }

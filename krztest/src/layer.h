@@ -222,6 +222,7 @@ struct layer
     bool _doNoise;
     float _masterGain = 0.0f;
     float _AENV[1024];
+    float _layerTime;
 
     FPARAM _fp[4];
 

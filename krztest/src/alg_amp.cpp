@@ -118,11 +118,11 @@ void PLUSAMP::compute(dspBlockBuffer& obuf) //final
     {
         _filt = 0.999*_filt + 0.001*gain;
         float linG = decibel_to_linear_amp_ratio(_filt);
-        float inU = ubuf[i];
-        float inL = lbuf[i];
+        float inU = ubuf[i]*_dbd._pad;
+        float inL = lbuf[i]*_dbd._pad;
         float ae = aenv[i];
         float res = (inU+inL)*0.5*linG*ae*2.0;
-        res = clip_float(res,-1,1);
+        res = clip_float(res,-2,2);
         lbuf[i] = res;
         ubuf[i] = res;
     }
@@ -163,11 +163,11 @@ void XAMP::compute(dspBlockBuffer& obuf) //final
     {   
         _filt = 0.999*_filt + 0.001*gain;
         float linG = decibel_to_linear_amp_ratio(_filt);
-        float inU = ubuf[i];
-        float inL = lbuf[i];
+        float inU = ubuf[i]*_dbd._pad;
+        float inL = lbuf[i]*_dbd._pad;
         float ae = aenv[i];
         float res = (inU*inL)*linG*ae*UpperLinG;
-        res = clip_float(res,-1,1);
+        res = clip_float(res,-4,4);
         lbuf[i] = res;
         ubuf[i] = res;
     }
@@ -197,7 +197,7 @@ void GAIN::compute(dspBlockBuffer& obuf) //final
 
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
     if(1) for( int i=0; i<inumframes; i++ )
-    {   float inp = ubuf[i];
+    {   float inp = ubuf[i]*_dbd._pad;
         ubuf[i] = inp*linG;
     }
 }
@@ -230,8 +230,8 @@ void XFADE::compute(dspBlockBuffer& obuf) //final
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
     if(1) for( int i=0; i<inumframes; i++ )
     {        
-        float inputU = ubuf[i];
-        float inputL = lbuf[i];
+        float inputU = ubuf[i]*_dbd._pad;
+        float inputL = lbuf[i]*_dbd._pad;
         _plmix = _plmix*0.995f+lmix*0.005f;
         _pumix = _pumix*0.995f+umix*0.005f;
 
@@ -266,8 +266,8 @@ void XGAIN::compute(dspBlockBuffer& obuf) //final
     {   
         _filt = 0.999*_filt + 0.001*gain;
         float linG = decibel_to_linear_amp_ratio(_filt);
-        float inU = ubuf[i];
-        float inL = lbuf[i];
+        float inU = ubuf[i]*_dbd._pad;
+        float inL = lbuf[i]*_dbd._pad;
         float res = (inU*inL)*linG;
         res = clip_float(res,-1,1);
         //lbuf[i] = res;
@@ -314,8 +314,8 @@ void AMPU_AMPL::compute(dspBlockBuffer& obuf) //final
         _filtL = 0.999*_filtL + 0.001*gainL;
         float linGU = decibel_to_linear_amp_ratio(_filtU);
         float linGL = decibel_to_linear_amp_ratio(_filtL);
-        float inU = ubuf[i];
-        float inL = lbuf[i];
+        float inU = ubuf[i]*_dbd._pad;
+        float inL = lbuf[i]*_dbd._pad;
         float ae = aenv[i];
         float resU = inU*linGU*ae*UpperLinG;
         float resL = inL*linGU*ae*LowerLinG;
@@ -392,7 +392,7 @@ void PANNER::compute(dspBlockBuffer& obuf) //final
     //printf( "pan<%f> lmix<%f> rmix<%f>\n", pan, lmix, rmix );
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        float input = ubuf[i];
+        float input = ubuf[i]*_dbd._pad;
         _plmix = _plmix*0.995f+lmix*0.005f;
         _prmix = _prmix*0.995f+rmix*0.005f;
 
