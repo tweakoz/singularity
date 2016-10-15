@@ -54,6 +54,12 @@ void FunInst::keyOn(const layer* l, const FunData* data)
             float b = this->_b();
             return (a+b);
         };  
+    else if( op=="a-b" )
+        _op = [=]()->float{
+            float a = this->_a();
+            float b = this->_b();
+            return (a-b);
+        };  
     else if( op=="a*b" )
         _op = [=]()->float{
             float a = this->_a();

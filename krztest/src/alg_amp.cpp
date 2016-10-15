@@ -275,6 +275,9 @@ void XGAIN::compute(dspBlockBuffer& obuf) //final
     }
     _fval[0] = _filt;
 }
+void XGAIN::doKeyOn(const DspKeyOnInfo& koi) //final
+{   _filt = 0.0f;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -364,7 +367,10 @@ void BAL_AMP::compute(dspBlockBuffer& obuf) //final
         ubuf[i] = inp*linG;
     }
 }
-
+void BAL_AMP::doKeyOn(const DspKeyOnInfo& koi) //final
+{
+    
+}
 ///////////////////////////////////////////////////////////////////////////////
 
 PANNER::PANNER( const DspBlockData& dbd )

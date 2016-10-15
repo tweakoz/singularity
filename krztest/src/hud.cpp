@@ -105,6 +105,8 @@ void synth::onDrawHudPage1(float width, float height)
              //hudstr +=  formatString("lay.natenv<%d>\n",int(ld->_useNatEnv));
              hudstr +=  formatString("lay.sampselnote<%d>\n",int(_hudLayer->_sampselnote));
              hudstr +=  formatString("lay.samppbnote<%d>\n",int(_hudLayer->_samppbnote));
+             hudstr +=  formatString("lay.basecentsOSC<%d>\n",_hudLayer->_basecentsOSC);
+             hudstr +=  formatString("lay.curcentsOSC<%d>\n",_hudLayer->_curcentsOSC);
              hudstr +=  formatString("lay.curcents<%d>\n",int(_hudLayer->_curcents));
              hudstr +=  formatString("lay._kmcents<%d>\n",int(_hudLayer->_kmcents));
              hudstr +=  formatString("lay._pchcents<%d>\n",int(_hudLayer->_pchcents));
@@ -218,8 +220,8 @@ void synth::onDrawHudPage2(float width, float height)
     bool useNENV = ENVCT._useNatEnv;
 
     float fxb = 0;
-    float fh = 300.0f;
-    float fw = 600.0f;
+    float fh = 360.0f;
+    float fw = 800.0f;
     float fyb = (height-1)-fh*3;
 
     svar_t svar;
@@ -788,7 +790,7 @@ void DrawFun(synth* s, layer* layer, FunInst* fun, int VPW, int VPH, int X1, int
     float fyb = Y2-1;
     float fw = W;
     float fpx = fxb;
-    float fh = 200;
+    float fh = 300;
     float sx0 = env_bx+spcperseg*0;
     float sx1 = env_bx+spcperseg*1;
     float sx2 = env_bx+spcperseg*2;
@@ -905,9 +907,25 @@ void synth::onDrawHudPage3(float width, float height)
 
     const float* ldata = hudl->_oscopebuffer;
 
+    float OSC_X1 = 100;
+    float OSC_Y1 = 250;
+    float OSC_W = 1400;
+    float OSC_H = 500;
+    float OSC_HH = OSC_H*0.5;
+    float OSC_CY = OSC_Y1+OSC_HH;
+    float OSC_X2 = OSC_X1+OSC_W;
+    float OSC_Y2 = OSC_Y1+OSC_H;
+
+    float ANA_X1 = 100;
+    float ANA_Y1 = 800;
+    float ANA_W = 1400;
+    float ANA_H = 600;
+    float ANA_HH = ANA_H*0.5;
+    float ANA_CY = ANA_Y1+ANA_HH;
+    float ANA_X2 = ANA_X1+ANA_W;
+    float ANA_Y2 = ANA_Y1+ANA_H;
+
     PushOrtho(width,height);
-    DrawBorder(100,250,1100,750);
-    DrawBorder(100,750,1100,1100);
 
     //static array_t fftbins;
     //fftbins.resize(inumframes);
@@ -919,10 +937,13 @@ void synth::onDrawHudPage3(float width, float height)
   std::vector<float> im(audiofft::AudioFFT::ComplexSize(fftSize)); 
   std::vector<float> output(fftSize);
 
+// OSC centerline
       glBegin(GL_LINES);
-        glVertex3f(100.0f,500,0);
-        glVertex3f(1100.0f,500,0);
+        glVertex3f(OSC_X1,OSC_H,0);
+        glVertex3f(OSC_X2,OSC_H,0);
       glEnd();
+
+    /////////////////////////////////////////////
 
     glColor4f(.3,1,.3,1);
     glBegin(GL_LINE_STRIP);
@@ -942,8 +963,8 @@ void synth::onDrawHudPage3(float width, float height)
           return j;
       };
 
-      float x1 = 100.0f;
-      float y1 = 250.0f+250.0f+ldata[mapI(i)]*250.0f;
+      float x1 = OSC_X1;
+      float y1 = OSC_Y1+OSC_HH+ldata[mapI(i)]*OSC_HH;
       glVertex3f(x1,y1,0);      
       for( i=0; i<inumframes; i++ )
       {   int j = mapI(i);
@@ -957,11 +978,11 @@ void synth::onDrawHudPage3(float width, float height)
           float s2 = ldata[i];
           input[i]= s2*win;
 
-          float x = 1000.0f*float(i)/float(inumframes);
-          float y = 250.0f+s*250.0f;
+          float x = OSC_W*float(i)/float(inumframes);
+          float y = OSC_HH+s*OSC_HH;
 
-          float x2 = x+100.0f;
-          float y2 = y+250.0f;
+          float x2 = x+OSC_X1;
+          float y2 = y+OSC_HH;
           glVertex3f(x2,y2,0);      
       }
       glEnd();
@@ -978,18 +999,17 @@ void synth::onDrawHudPage3(float width, float height)
       // map bin -> Y
       //////////////////////////////
 
-      auto mapDB = [](float re, float im) ->float
+      auto mapDB = [&](float re, float im) ->float
       {
           float mag = re*re+im*im;
-          //if( mag>1.0f )
-          //    mag = 1.0f;
-
           float dB = 10.0f*log_base( 10.0f, mag );
           return dB;
       };
-      auto mapFFTY = [](float dbin) ->float
+      auto mapFFTY = [&](float dbin) ->float
       {
-        float y = 750-((dbin-36)/132.0f)*350.0f;
+        float dbY = (dbin+96.0f)/132.0f;
+
+        float y = ANA_Y2-dbY*ANA_H;
         return y;
       };
 
@@ -999,8 +1019,8 @@ void synth::onDrawHudPage3(float width, float height)
       for( int i=36; i>=-96; i-=12 )
       {
         float db0 = i;
-        glVertex3f(100.0f,mapFFTY(db0),.0f);
-        glVertex3f(1100.0f,mapFFTY(db0),.0f);
+        glVertex3f(ANA_X1,mapFFTY(db0),.0f);
+        glVertex3f(ANA_X2,mapFFTY(db0),.0f);
       }
       glEnd();
 
@@ -1009,9 +1029,9 @@ void synth::onDrawHudPage3(float width, float height)
       glColor4f(.3,.7,1,1);
       glBegin(GL_LINE_STRIP);
       float dB = mapDB(re[0],im[0]);
-      float x = 1000.0f*float(0)/float(inumframes);
+      float x = ANA_W*float(0)/float(inumframes);
       float y = mapFFTY(dB);
-      float xx = x+100.0f;
+      float xx = x+ANA_X1;
       float yy = y;
       glVertex3f(xx,yy,0);      
       for( int i=0; i<inumframes/2; i++ )
@@ -1027,9 +1047,9 @@ void synth::onDrawHudPage3(float width, float height)
           float frq = fi*24000.0f;
           float midinote = frequency_to_midi_note(frq);
 
-          float x = 1000.0f*midinote/128.0;
+          float x = ANA_W*midinote/128.0;
           float y = mapFFTY(dB);
-          float xx = x+100.0f;
+          float xx = x+ANA_X1;
           glVertex3f(xx,y,0);      
       }
       //freqbins[index] = complex_t(0,0);
@@ -1040,14 +1060,17 @@ void synth::onDrawHudPage3(float width, float height)
       for( int n=0; n<128; n+=12 )
       {
         float db0 = i;
-        float x = 1000.0f*float(n)/128.0;
-        glVertex3f(x,750,0);      
-        glVertex3f(x,1100,0);      
+        float x = ANA_W*float(n)/128.0;
+        glVertex3f(x,ANA_Y1,0);      
+        glVertex3f(x,ANA_Y2,0);      
 
       }
       glEnd();
   
       //////////////////////////////
+
+    DrawBorder(OSC_X1,OSC_Y1,OSC_X2,OSC_Y2);
+    DrawBorder(ANA_X1,ANA_Y1,ANA_X2,ANA_Y2);
 
       PopOrtho();
 
@@ -1061,8 +1084,8 @@ void synth::onDrawHudPage3(float width, float height)
       }
       for( int n=0; n<128; n+=12 )
       {
-        float x = 100+1000.0f*float(n)/128.0;
-        drawtext( formatString("midi\n%d",n), x,1130, fontscale, .6,0,.8 );
+        float x = ANA_X1+ANA_W*float(n)/128.0;
+        drawtext( formatString("midi\n%d",n), x,ANA_Y2+30, fontscale, .6,0,.8 );
 
       }
 
@@ -1072,10 +1095,10 @@ void synth::onDrawHudPage3(float width, float height)
 
       auto alg = hudl->_alg;
 
-      float xb = 1150;
+      float xb = 1600;
       float yb = 90;
       float dspw = 400;
-      float dsph = 272;
+      float dsph = 344;
       float yinc = dsph+3;
 
       glColor4f(.7,.7,.3,1);
@@ -1189,18 +1212,22 @@ void synth::onDrawHudPage3(float width, float height)
             {
                 float tot = b->_fval[idx];
                 float coa = b->_ctrl[idx]._coarse;
+                float fin = b->_ctrl[idx]._fine;
                 float s1 = b->_ctrl[idx]._C1();
                 float s2 = b->_ctrl[idx]._C2();
-                float kt = b->_ctrl[idx]._keyOff;
-                float vt = b->_ctrl[idx]._velOff;
+                float ko = b->_ctrl[idx]._keyOff;
+                float vo = b->_ctrl[idx]._velOff;
                 char paramC = 'A'+idx;
-                auto text = formatString("P%c<%g> _c<%g>",paramC,tot,coa);
+                auto text = formatString("P%c<%g>",paramC,tot);
+                drawtext( text, xt, yt, fontscale, 1,1,0 );
+                yt += 20;
+                text = formatString("   _c<%g> _f<%g>",coa,fin);
                 drawtext( text, xt, yt, fontscale, 1,1,0 );
                 yt += 20;
                 text = formatString("   _s1<%g> _s2<%g>",s1,s2);
                 drawtext( text, xt, yt, fontscale, 1,1,0 );
                 yt += 20;
-                text = formatString("   _kt<%g> _vt<%g>",kt,vt);
+                text = formatString("   _ko<%g> _vo<%g>",ko,vo);
                 drawtext( text, xt, yt, fontscale, 1,1,0 );
                 yt += 20;
             };

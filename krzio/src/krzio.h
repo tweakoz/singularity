@@ -51,6 +51,14 @@ static const u32 kKRZHwTypeK2000b = 0x03400000;
 
 ///////////////////////////////////////////////////////////////////////////////
 
+struct Keystart
+{
+	std::string _note;
+	int _octave = 0;
+	std::string _mode;
+};
+///////////////////////////////////////////////////////////////////////////////
+
 typedef ork::svar64_t fparamvar_t;
 
 struct fparamVar
@@ -91,7 +99,7 @@ struct fparam
 	fparamVar _varFine;
 	fparamVar _var14;
 	fparamVar _var15;
-	fparamVar _varKeyStart;
+	Keystart _varKeyStart;
 	fparamVar _varKeyTrack;
 	fparamVar _varVelTrack;
 	fparamVar _varSrc1Depth;
@@ -102,6 +110,7 @@ struct fparam
 	std::string _algName;
 	std::string _blockName;
 	std::string _outputFiltAlg;
+	//Keystart _keystart;
 
 	int _blockIndex = -1;
 	float _outputPAD = 0.0f;
@@ -481,7 +490,7 @@ float getVelTrack97( int ival );
 int getVelTrack96( int ival );
 int getVelTrack98( int ival );
 float get72Adjust( int index );
-std::string getKeyStart81(int uval);
+Keystart getKeyStart81(int uval);
 std::string getFreq83( int ival );
 
 int makeSigned(int inp);

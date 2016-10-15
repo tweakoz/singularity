@@ -1,6 +1,12 @@
 #include "krzio.h"
 #include <fstream>
 
+// crankitup
+// layer3
+// keystart - C-1 unipolar
+// NOT C10
+// eff kt should prob be 0
+// not -6
 using namespace rapidjson;
 
 void filescanner::parseControllers(	const datablock& db,

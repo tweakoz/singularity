@@ -24,7 +24,7 @@ output will pin at zero-scale.
 
 float shaper(float inp, float adj)
 {
-	float index = pi*4.0f*inp*adj;
+	float index = pi*3.0f*inp*adj;
 
 	//adj = 0.85f;
 	//adj *= 5.0f;

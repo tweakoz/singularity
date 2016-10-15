@@ -271,11 +271,16 @@ void synth::compute(int inumframes,const void* inputBuffer)
 	auto lb = _obuf._leftBuffer;
 	auto rb = _obuf._rightBuffer;
 
+	if( input )
+	for( int i=0; i<inumframes; i++ )
+	{
+		ilb[i] = input[i];
+	}
+
 	for( int i=0; i<inumframes; i++ )
 	{
 		lb[i] = 0.0f;
 		rb[i] = 0.0f;
-		ilb[i] = input[i];
 	}
 
 	/////////////////////////////

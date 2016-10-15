@@ -13,7 +13,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 //static const int kdefaultprogID = 191;
-static const int kdefaultprogID = 129;
+static const int kdefaultprogID = 31;
 static int programID = 0;
 static int octave = 4;
 static bool dokeymaps = false;
@@ -78,7 +78,7 @@ void startupAudio()
 
     /* Open an audio I/O stream. */
     err = Pa_OpenDefaultStream( &pa_stream,
-                                1,          // no input channels 
+                                0,          // no input channels 
                                 2,          // stereo output 
                                 paFloat32,  // 32 bit floating point output 
                                 the_synth->_sampleRate,
@@ -372,8 +372,8 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
             the_synth->_doPressure = down; //! the_synth->_doPressure;
           break;        
         case 340:
-          if( down or up ) 
-            the_synth->_doInput = down; //! the_synth->_doModWheel;
+          if( down  ) 
+            the_synth->_doInput = ! the_synth->_doInput; //! the_synth->_doModWheel;
           break;        
         case 'Q':
           if( ! down ) break;
@@ -458,7 +458,7 @@ void runUI()
       return;
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(800, 600, "KrzTest", NULL, NULL);
+    window = glfwCreateWindow(1024, 768, "KrzTest", NULL, NULL);
     if (!window)
     {
       glfwTerminate();

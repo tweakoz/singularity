@@ -80,7 +80,7 @@ void getFParamDRV( fparam& fp )
     int maxDpt = makeSigned(fp._inputMaxDepth);
 
     fp._varCoarseAdjust.set<int>("Coarse","dB","%%d", adjust);
-    fp._varKeyStart.set<std::string>("KeyStart","nt", "%%s", getKeyStart81(fp._inputFine));
+    fp._varKeyStart = getKeyStart81(fp._inputFine);
     fp._varKeyTrack.set<float>("KeyTrack","dB/key","%%0.1f", float(keytrk)*0.02f);
     fp._varVelTrack.set<int>("VelTrack","dB","%%d", veltrk);
     fp._varSrc1Depth.set<int>("Depth","dB","%%d", depth);
@@ -154,7 +154,7 @@ void getFParamWRP( fparam& fp )
     fp._varSrc1Depth.set<float>("Depth","dB","%%0.1f", float(depth)*0.5f);
     fp._varSrc2MinDepth.set<float>("MinDepth","dB","%%0.1f", minDpt*0.5f);
     fp._varSrc2MaxDepth.set<float>("MaxDepth","dB","%%0.1f", maxDpt*0.5f);
-    fp._varKeyStart.set<std::string>("KeyStart","nt", "%%s", getKeyStart81(fp._inputFine));
+    fp._varKeyStart = getKeyStart81(fp._inputFine);
 }
 
 void getFParamDEP( fparam& fp )
@@ -173,7 +173,7 @@ void getFParamDEP( fparam& fp )
     fp._varSrc2MinDepth.set<int>("MinDepth","dB","%%d", minDpt);
     fp._varSrc2MaxDepth.set<int>("MaxDepth","dB","%%d", maxDpt);
 
-    fp._varKeyStart.set<std::string>("KeyStart","nt", "%%s", getKeyStart81(fp._inputFine));
+    fp._varKeyStart = getKeyStart81(fp._inputFine);
 }
 
 void getFParamAMT( fparam& fp )
@@ -188,7 +188,7 @@ void getFParamAMT( fparam& fp )
     fp._varCoarseAdjust.set<float>("Coarse","x","%%0.001f", float(adjust)*0.025f );
     fp._varKeyTrack.set<float>("KeyTrack","x/key","%%0.001f", float(keytrk)*0.002f);
     fp._varVelTrack.set<float>("VelTrack","x","%%d", float(veltrk)*.05f );
-    fp._varKeyStart.set<std::string>("KeyStart","nt", "%%s", getKeyStart81(fp._inputFine));
+    fp._varKeyStart = getKeyStart81(fp._inputFine);
     fp._varSrc1Depth.set<float>("Depth","x","%%0.01f", float(depth)*0.05f);
     fp._varSrc2MinDepth.set<float>("MinDepth","x","%%0.01f", minDpt*0.05f);
     fp._varSrc2MaxDepth.set<float>("MaxDepth","x","%%0.01f", maxDpt*0.05f);
@@ -278,8 +278,17 @@ void filescanner::fparamOutput(const fparam& fp, const std::string& blkname, rap
         fparamVarOutput( fp._var14, blkname, jsono );
     if( fp._var15 )
         fparamVarOutput( fp._var15, blkname, jsono );
-    if( fp._varKeyStart )
-        fparamVarOutput( fp._varKeyStart, blkname, jsono );
+    if( fp._varKeyStart._note.length() )
+    {
+        Value fpvout(kObjectType);
+
+        AddMember(fpvout, "Note", fp._varKeyStart._note );
+        AddMember(fpvout, "Octave", fp._varKeyStart._octave );
+        AddMember(fpvout, "Mode", fp._varKeyStart._mode);
+
+        AddMember(jsono,"KeyStart",fpvout);
+//        fparamVarOutput( fp._varKeyStart, blkname, jsono );
+    }
 
     if( fp._varKeyTrack )
         fparamVarOutput( fp._varKeyTrack, blkname, jsono );

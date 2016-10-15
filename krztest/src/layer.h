@@ -196,7 +196,6 @@ struct layer
     int _curnote;
     int _ldindex;
     float _layerGain;
-    float _baseCents;
     float _curSampSRratio;
     float _curPitchOffsetInCents;
     float _centsPerKey;
@@ -208,6 +207,11 @@ struct layer
     bool _ignoreRelease;
     int _postdone;
     int _curcents;
+    float _baseCents;
+
+    int _basecentsOSC;
+    int _curcentsOSC;
+
     int _sampselnote;
     int _kmcents;
     int _pchcents;

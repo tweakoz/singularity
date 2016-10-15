@@ -86,6 +86,9 @@ void layer::compute(outputBuffer& obuf)
     _curcents = _baseCents + _curPitchOffsetInCents;
     _curcents = clip_float( _curcents, -0,12700 );
 
+    _curcentsOSC = _basecentsOSC ;//+ _curPitchOffsetInCents;
+    _curcentsOSC = clip_float( _curcentsOSC, -0,12700 );
+
     updateSampSRRatio();
     float currat = _curSampSRratio;
 
@@ -166,7 +169,7 @@ void layer::compute(outputBuffer& obuf)
 
             for( int i=0; i<inumframes; i++ )
             {
-                float o = sinf(_sinrepPH)*_preDSPGAIN;
+                float o = sinf(_sinrepPH)*_preDSPGAIN*0.15;
                 _sinrepPH += phaseinc;
                 lyroutl[i] = o;
                 lyroutr[i] = 0.0f;
@@ -256,7 +259,7 @@ void layer::compute(outputBuffer& obuf)
     {
         float l = _layerObuf._leftBuffer[i];
         float r = _layerObuf._rightBuffer[i];
-        tailb[i] = doBlockStereo ? l+r : l;
+        tailb[i] = l;//doBlockStereo ? l+r : l;
         //tailb[i] *= ampenv;
     }
 
@@ -323,6 +326,14 @@ controller_t layer::getController(const std::string& srcn) const
         return [this]()
         {   return 0.0f;
         };
+    else if( srcn == "ON" )
+        return [this]()
+        {   return 1.0f;
+        };
+    else if( srcn == "-ON" )
+        return [this]()
+        {   return -1.0f;
+        };
     else if( srcn == "MPress" )
     {
         auto state = new float(0);
@@ -342,10 +353,6 @@ controller_t layer::getController(const std::string& srcn) const
             return (*state);
         };
     }
-    else if( srcn == "ON" )
-        return [this]()
-        {   return 1.0f;
-        };
     else if( srcn == "KeyNum" )
         return [this]()
         {   return this->_curnote/float(127.0f);
@@ -532,8 +539,12 @@ void layer::keyOn( int note, int vel, const layerData* ld )
         _curpitchadjx = pitchadjx;
 
         _baseCents = _kmcents+_pchcents+pitchadjx-1200;
+        _basecentsOSC = 6000;//(note-0)*100;//pitchadjx-1200;
         if(pitchadj)
+        {
             _baseCents = _kmcents+_pchcents+pitchadj;
+            _basecentsOSC = _pchcents+pitchadj;
+        }
         _curcents = _baseCents;
 
         updateSampSRRatio();

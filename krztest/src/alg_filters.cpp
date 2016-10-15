@@ -18,8 +18,8 @@ void BANDPASS_FILT::compute(dspBlockBuffer& obuf) //final
     float fc = _ctrl[0].eval();
     float wid = _ctrl[1].eval();        
     
-    //_filter.SetWithBWoct(EM_BPF,fc,wid);
-    _biquad.SetParametric(fc,wid,0.0f);
+    _filter.SetWithBWoct(EM_BPF,fc,wid);
+    //_biquad.SetParametric(fc,wid,-3.0f);
 
     if(1)for( int i=0; i<inumframes; i++ )
     {

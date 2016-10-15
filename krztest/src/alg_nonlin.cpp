@@ -17,9 +17,9 @@ void SHAPER::compute(dspBlockBuffer& obuf) //final
     float* ubuf = obuf._upperBuffer;
     float amt = _ctrl[0].eval();//,0.01f,100.0f);
     _fval[0] = amt;
-    float la = decibel_to_linear_amp_ratio(amt);
+    //float la = decibel_to_linear_amp_ratio(amt);
     if(1) for( int i=0; i<inumframes; i++ )
-    {   float s1 = shaper(ubuf[i]*pad,la);
+    {   float s1 = shaper(ubuf[i]*pad,amt);
         ubuf[i] = s1;
     }
 }

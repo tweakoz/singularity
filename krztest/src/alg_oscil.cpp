@@ -18,8 +18,10 @@ void SINE::compute(dspBlockBuffer& obuf) //final
 
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
-    float lyrcents = _layer->_curcents;
-    float frq = midi_note_to_frequency((centoff+lyrcents)*0.01);
+    float lyrcents = _layer->_curcentsOSC;
+    float cin = (lyrcents+centoff)*0.01;
+    float frq = midi_note_to_frequency(cin);
+    //printf("lc<%f> coff<%f> cin<%f> frq<%f>\n", lyrcents, centoff, cin, frq );
     float SR = _layer->_syn._sampleRate;
     _pblep.setFrequency(frq);
 
@@ -49,8 +51,9 @@ void SAW::compute(dspBlockBuffer& obuf) //final
 
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
-    float lyrcents = _layer->_curcents;
-    float frq = midi_note_to_frequency((centoff+lyrcents)*0.01);
+    float lyrcents = _layer->_curcentsOSC;
+    float cin = (lyrcents+centoff)*0.01;
+    float frq = midi_note_to_frequency(cin);
     float SR = _layer->_syn._sampleRate;
     _pblep.setFrequency(frq);
 
@@ -80,8 +83,9 @@ void SQUARE::compute(dspBlockBuffer& obuf) //final
 
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
-    float lyrcents = _layer->_curcents;
-    float frq = midi_note_to_frequency((centoff+lyrcents)*0.01);
+    float lyrcents = _layer->_curcentsOSC;
+    float cin = (lyrcents+centoff)*0.01;
+    float frq = midi_note_to_frequency(cin);
     float SR = _layer->_syn._sampleRate;
     _pblep.setFrequency(frq);
 
@@ -111,8 +115,9 @@ void SINEPLUS::compute(dspBlockBuffer& obuf) //final
 
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
-    float lyrcents = _layer->_curcents;
-    float frq = midi_note_to_frequency((centoff+lyrcents)*0.01);
+    float lyrcents = _layer->_curcentsOSC;
+    float cin = (lyrcents+centoff)*0.01;
+    float frq = midi_note_to_frequency(cin);
     float SR = _layer->_syn._sampleRate;
     _pblep.setFrequency(frq);
     float pad = _dbd._pad;
@@ -145,12 +150,14 @@ void SAWPLUS::compute(dspBlockBuffer& obuf) //final
 
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
-    float lyrcents = _layer->_curcents;
-    float frq = midi_note_to_frequency((centoff+lyrcents)*0.01);
+    float lyrcents = _layer->_curcentsOSC;
+    float cin = (lyrcents+centoff)*0.01;
+    float frq = midi_note_to_frequency(cin);
     float SR = _layer->_syn._sampleRate;
     _pblep.setFrequency(frq);
     float pad = _dbd._pad;
 
+    //printf("lc<%f> coff<%f> cin<%f> frq<%f>\n", lyrcents, centoff, cin, frq );
     //printf( "saw+ pad<%f>\n", pad );
 
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
@@ -182,8 +189,9 @@ void SWPLUSSHP::compute(dspBlockBuffer& obuf) //final
 
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
-    float lyrcents = _layer->_curcents;
-    float frq = midi_note_to_frequency((centoff+lyrcents)*0.01);
+    float lyrcents = _layer->_curcentsOSC;
+    float cin = (lyrcents+centoff)*0.01;
+    float frq = midi_note_to_frequency(cin);
     float SR = _layer->_syn._sampleRate;
     _pblep.setFrequency(frq);
     float pad = _dbd._pad;

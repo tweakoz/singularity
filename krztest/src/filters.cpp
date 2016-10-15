@@ -166,7 +166,7 @@ void BiQuad::Clear()
 }
 float BiQuad::compute( float input )
 {   
-    input = clip_float(input,-1,1);
+    //input = clip_float(input,-1,1);
 
     float outputp = (_mfb0*input)
                  + (_mfb1*_xm1)
@@ -179,7 +179,7 @@ float BiQuad::compute( float input )
 
     float output = outputp+outputn;
 
-    output = clip_float(output,-4,4);
+    //output = clip_float(output,-8,8);
 
     _xm2 = _xm1;
     _xm1 = input;

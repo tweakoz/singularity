@@ -465,24 +465,40 @@ std::string getMidiNoteName(int uval)
 	return rval;
 }
 
-std::string getKeyStart81(int uval)
+Keystart getKeyStart81(int uval)
 {
 	int nval = makeSigned(uval);
 	//printf( "ival<%d> nval<%d> nnval<%d>\n", ival, nval, nval+48 );
-	int kstart = nval+120;
-	assert(kstart<241);
-
-	int note = kstart%12;
-	int octave = kstart/12;
+	Keystart rval;
 
 	const int ktabsize = 12;
 	const char* nottab[12] = 
-	{	"C ", "C# ", "D ", "D# ",
-		"E ", "F ", "F# ", "G ",
-		"G# ", "A ", "A# ", "B "
+	{	"C", "C#", "D", "D#",
+		"E", "F", "F#", "G",
+		"G#", "A", "A#", "B"
 	};
 
-	auto rval = formatString("%s%d", nottab[note], octave );
+	if( nval>=0 )
+	{
+		int kstart = nval;
+		int note = kstart%12;
+		int octave = (kstart/12)-1;
+
+		rval._note = nottab[note];
+		rval._octave = octave;
+		rval._mode = "Unipolar";
+	}
+	else // if( nval<0 )
+	{
+		int kstart = nval+120;
+		assert(kstart<120);
+
+		int note = kstart%12;
+		int octave = kstart/12;
+		rval._note = nottab[note];
+		rval._octave = octave;
+		rval._mode = "Bipolar";
+	}
 	return rval;
 }
 

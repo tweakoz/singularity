@@ -150,6 +150,7 @@ struct BAL_AMP : public DspBlock
 {
     BAL_AMP( const DspBlockData& dbd );
     void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
     float _filt;
 };
 
@@ -157,6 +158,7 @@ struct XGAIN : public DspBlock
 {
     XGAIN( const DspBlockData& dbd );
     void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
     float _filt;
 };
 
