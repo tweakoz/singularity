@@ -169,7 +169,8 @@ void layer::compute(outputBuffer& obuf)
 
             for( int i=0; i<inumframes; i++ )
             {
-                float o = sinf(_sinrepPH)*_preDSPGAIN*0.15;
+                //float o = sinf(_sinrepPH)*_preDSPGAIN*0.15;
+                float o = (((rand()&0xffff)/32768.0f)-1.0f)*_preDSPGAIN;
                 _sinrepPH += phaseinc;
                 lyroutl[i] = o;
                 lyroutr[i] = 0.0f;

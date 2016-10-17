@@ -151,7 +151,7 @@ struct BlockModulationData
     float _src1Depth = 0.0f;
     float _src2MinDepth = 0.0f;
     float _src2MaxDepth = 0.0f;
-    evalit_t _evaluator = [](const controlevalctx& cec)->float{return cec._coarse;};
+    evalit_t _evaluator = [](FPARAM& cec)->float{return cec._coarse;};
 
 };
 
@@ -178,6 +178,8 @@ struct FBlockData
     float _fine = 0.0f;
     float _keyTrack = 0.0f;
     float _velTrack = 0.0f;
+    int _keystartNote = 60;
+    bool _keystartBipolar = true; // false==unipolar
     BlockModulationData _mods;
 };
 

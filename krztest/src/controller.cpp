@@ -19,28 +19,29 @@ FPARAM::FPARAM()
 
 void FPARAM::keyOn( int ikey, int ivel )
 {
-    _keyOff = float(ikey-60);
-    _velOff = float(ivel)/127.0f; 
+    _keyOff = float(ikey-_kstartNote);
+    _unitVel = float(ivel)/127.0f; 
+
+    if( false == _kstartBipolar )
+    {
+        if( _keyOff<0 )
+            _keyOff = 0;
+
+        //printf( "ikey<%d> ksn<%d> ko<%d>\n", ikey, _kstartNote, int(_keyOff) );
+    }
+
+    printf( "_kstartNote<%d>\n", _kstartNote );
     printf( "_keyOff<%f>\n", _keyOff );
-    printf( "_velOff<%f>\n", _velOff );
+    printf( "_unitVel<%f>\n", _unitVel );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 float FPARAM::eval(bool dump)
 {
-    float c1 = _C1();
-    float c2 = _C2();
-    controlevalctx ctx;
-    ctx._coarse = _coarse;
-    ctx._fine = _fine;
-    ctx._src1 = c1;
-    ctx._src2 = c2;
-    ctx._keyOff = _keyOff;
-    ctx._velOff = _velOff;
-    float tot = _evaluator(ctx);
+    float tot = _evaluator(*this);
     if( dump )
-        printf( "coarse<%g> c1<%g> c2<%g> tot<%g>\n", _coarse, c1, c2, tot );
+        printf( "coarse<%g> c1<%g> c2<%g> tot<%g>\n", _coarse, _C1(), _C2(), tot );
 
     return tot;
 }
@@ -58,6 +59,8 @@ FPARAM layer::initFPARAM(const FBlockData& fbd)
 
     rval._keyTrack = fbd._keyTrack;
     rval._velTrack = fbd._velTrack;
+    rval._kstartNote = fbd._keystartNote;
+    rval._kstartBipolar = fbd._keystartBipolar;
 
     return rval;
 }

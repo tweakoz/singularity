@@ -13,7 +13,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 //static const int kdefaultprogID = 191;
-static const int kdefaultprogID = 31;
+static const int kdefaultprogID = 129;
 static int programID = 0;
 static int octave = 4;
 static bool dokeymaps = false;

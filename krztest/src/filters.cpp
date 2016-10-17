@@ -192,12 +192,35 @@ float BiQuad::compute( float input )
     //printf( "_ym1<%f> _ym2<%f>\n", _ym1, _ym2 );
     //printf( "outputp<%f> outputn<%f> output<%f>\n", outputp, outputn, output );
 
-    assert(false==isnan(_ym1));
-    assert(false==isinf(_ym1));
+    if(isnan(_ym1) or isinf(_ym1) )
+    {
+        _ym1 = 0.0f;
+    }
+
+    //assert(false==isnan(_ym1));
+    //assert(false==isinf(_ym1));
 
     return output;
 }
 
+float BiQuad::compute2( float input )
+{   
+
+    float output = ( (_mfb0 * input) + 
+                     (_mfb1*_xm1) + 
+                     (_mfb2*_xm2) - 
+                     (_mfa1*_ym1) - 
+                     (_mfa2*_ym2) )
+
+                  /_mfa0;
+    
+    _xm2 = _xm1;
+    _xm1 = input;
+    _ym2 = _ym1;
+    _ym1 = output;
+  
+    return output;
+}
 ///////////////////////////////////////////////////////////////////////////////
 
 void BiQuad::SetLpfReson( float kfco, float krez )
@@ -242,11 +265,24 @@ void BiQuad::SetLpfReson( float kfco, float krez )
 
 }
 
+void BiQuad::SetBpfMeth2( float kfco )
+{ 
+    //H(S) = (S/Q)/(S^2 + S/Q + 1)
+    float Q=8.5f;
+    float W = tan(pi*kfco*ISR);
+    float N = 1.0f/(W*W + W/Q + 1.0f);
+    _mfb0 = N*W/Q;
+    _mfb1 = 0.0;
+    _mfb2 = -_mfb0;
+    _mfa1 = 2.0f*N*(W*W - 1.0f);
+    _mfa2 = N*(W*W - W/Q + 1.0f);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 void BiQuad::SetBpfWithQ( float kfco, float Q, float peakGain )
 
 {
-    float V = decibel_to_linear_amp_ratio(peakGain);
+    //float V = decibel_to_linear_amp_ratio(peakGain);
     float K = std::tan(pi*kfco*ISR);
     float KK = K*K;
     float KdQ = K/Q;
@@ -257,13 +293,14 @@ void BiQuad::SetBpfWithQ( float kfco, float Q, float peakGain )
     _mfb2 = -_mfb0;
 
     _mfa1 = 2.0f*(KK-1.0f)*norm;
-    _mfa2 = (1.0f+KK-KdQ)*norm;
+    _mfa2 = (1.0f-KdQ+KK)*norm;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 void BiQuad::SetBpfWithBWoct( float kfco, float BWoct, float peakGain )
 {
+    BWoct = clip_float(fabs(BWoct),0.2,8);
     float w0 = kfco*PI2ISR;
     float sii = std::log(2.0f)/2.0f*BWoct*w0/sin(w0);
     float denom = 2.0f*std::sinh(sii);
@@ -420,6 +457,85 @@ void BiQuad::SetParametric( float kfco, float wid, float peakGain )
         _mfa2 = (1.0f - V/Q * K + K * K) * norm;
     }
 }
+
+//desc:parametric equalizer
+//slider1:4000<10,40000,40>band (Hz)
+//slider2:0<-120,120,1>gain (dB)
+//slider3:0.7<0.01,50,0.05>width
+
+void ParaOne::Clear()
+{
+    _c0=_c1=_c2=0;
+    _del1=_del2=0;
+    _li1=_li2=0;
+    _spl0 = 0.0f;
+}
+
+void ParaOne::Set(float f, float w, float g)
+{
+    //float arc=f*pi/(srate*0.5);
+    float arc=f*pi2*ISR;///(srate*0.5);
+    float gain = powf(2.0f,g/6.0f);
+    _a = (sinf(arc)*w) * ((gain < 1.0f) ? 1.0f : 0.25f);
+    float tmp=1.0f/(1.0f+_a);  
+
+    _c0 = tmp*_a*(gain-1.0f);
+    _c1 = tmp*2.0f*cosf(arc);
+    _c2 = tmp*(_a-1.0f);
+
+    //printf( "c0<%f> c1<%f> c2<%f>\n", _c0, _c1, _c2 );
+}
+
+float ParaOne::compute(float inp)
+{
+    float tmp = _c0*(inp-_del2) 
+              + _c1 * _li1 
+              + _c2 * _li2;
+
+    _del2 = _del1;
+    _del1 = inp; 
+    _li2 = _li1;
+    _li1 = tmp;
+    inp += _li1;
+
+    return inp;
+}
+
+void BiQuad::SetParametric2( float kfco, float wid, float dBGain )
+{
+    if(kfco>16000.0f)
+        kfco=16000.0f;
+    if( wid<0.1 )
+        wid = 0.1;
+
+#if 0
+    float Q = BW2Q(kfco,wid);
+    float w0 = pi2*kfco*ISR ;
+    float alpha = sin(w0)/(2*Q) ;
+    _mfb0 =   alpha;
+    _mfb1 =   0;
+    _mfb2 =  -_mfa0;
+    _mfa0 =   1 + alpha;
+    _mfa1 =  -2*cos(w0);
+    _mfa2 =   1 - alpha;
+
+#else
+    double A = pow(10, dBGain/40.0);
+    float Q = BW2Q(kfco,wid*2);
+    double omega = (pi2*kfco) / 48000.0f;
+    double sinw = sin(omega);
+    double cosw = cos(omega);
+    double alpha = sinw/(2.0*Q);
+
+    _mfb0 = 1 + (alpha * A);
+    _mfb1 = -2 * cosw;
+    _mfb2 = 1 - (alpha * A);
+    _mfa0 = 1 + (alpha / A);
+    _mfa1 = -2 * cosw;
+    _mfa2 = 1 - (alpha / A);
+#endif
+
+}
 void BiQuad::SetLowShelf( float kfco, float peakGain )
 {
     if(kfco>16000.0f)
@@ -441,6 +557,7 @@ void BiQuad::SetLowShelf( float kfco, float peakGain )
         _mfb2 = (1 - sqrtf(2.0f) * K + K * K) * norm;
         _mfa1 = 2 * (V * K * K - 1) * norm;
         _mfa2 = (1 - sqrtf(2*V) * K + V * K * K) * norm;
+        //printf( "PG<%f> V<%f>\n", peakGain, V );
     }
 
 }

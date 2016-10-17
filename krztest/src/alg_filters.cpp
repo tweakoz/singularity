@@ -18,13 +18,15 @@ void BANDPASS_FILT::compute(dspBlockBuffer& obuf) //final
     float fc = _ctrl[0].eval();
     float wid = _ctrl[1].eval();        
     
+    //printf( "fc<%f> wid<%f>\n", fc, wid );
     _filter.SetWithBWoct(EM_BPF,fc,wid);
-    //_biquad.SetParametric(fc,wid,-3.0f);
+    _biquad.SetBpfWithBWoct(fc,wid,-12.0f);
+    //_biquad.SetBpfMeth2(fc);
 
     if(1)for( int i=0; i<inumframes; i++ )
     {
         float input = ubuf[i]*pad;
-        //_filter.Tick(ubuf[i]*pad);
+        _filter.Tick(ubuf[i]*pad);
         //ubuf[i] = _filter.output;
         ubuf[i] = _biquad.compute(input);
     }
@@ -311,6 +313,50 @@ void LP2RES::doKeyOn(const DspKeyOnInfo& koi) // final
 
 ///////////////////////////////////////////////////////////////////////////////
 
+STEEP_RESONANT_BASS::STEEP_RESONANT_BASS( const DspBlockData& dbd )
+    :DspBlock(dbd)
+{   _numParams = 3;        
+}
+
+void STEEP_RESONANT_BASS::compute(dspBlockBuffer& obuf) //final
+{
+    float pad = _dbd._pad;
+    int inumframes = obuf._numframes;
+    float* ubuf = obuf._upperBuffer;
+
+    float fc = _ctrl[0].eval();
+    float res = _ctrl[1].eval();
+    float amp = _ctrl[2].eval();
+
+
+    _fval[1] = res;
+    _fval[2] = amp;
+
+
+    if(1)for( int i=0; i<inumframes; i++ )
+    {
+        _filtFC = 0.99*_filtFC + 0.01*fc;
+
+        _filter1.SetWithRes(EM_LPF,_filtFC,res);
+        _filter2.SetWithRes(EM_LPF,_filtFC,res);
+        _filter1.Tick(ubuf[i]*pad);
+        _filter2.Tick(_filter1.output);
+        ubuf[i] = _filter2.output;
+    }
+
+    _fval[0] = _filtFC;
+    //printf( "ff<%f> res<%f>\n", ff, res );
+
+}
+
+void STEEP_RESONANT_BASS::doKeyOn(const DspKeyOnInfo& koi) //final
+{   _filter1.Clear();
+    _filter2.Clear();
+    _filtFC = 0.0f;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 FOURPOLE_LOPASS_W_SEP::FOURPOLE_LOPASS_W_SEP( const DspBlockData& dbd )
     :DspBlock(dbd)
 {   _numParams = 3;        
@@ -423,6 +469,34 @@ void LOPASS::compute(dspBlockBuffer& obuf) //final
 }
 
 void LOPASS::doKeyOn(const DspKeyOnInfo& koi) //final
+{   _filter.Clear();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// LOPASS : 1 pole! lowpass
+///////////////////////////////////////////////////////////////////////////////
+
+LPGATE::LPGATE( const DspBlockData& dbd )
+    :DspBlock(dbd)
+{   _numParams = 1;                
+}
+
+void LPGATE::compute(dspBlockBuffer& obuf) //final
+{
+    float pad = _dbd._pad;
+    int inumframes = obuf._numframes;
+    float* ubuf = obuf._upperBuffer;
+    float fc = _ctrl[0].eval();
+    _fval[0] = fc;
+    _filter.SetWithQ(EM_LPF,fc,0.5);
+    if(1)for( int i=0; i<inumframes; i++ )
+    {
+        _filter.Tick(ubuf[i]*pad);
+        ubuf[i] = _filter.output;
+    }
+}
+
+void LPGATE::doKeyOn(const DspKeyOnInfo& koi) //final
 {   _filter.Clear();
 }
 

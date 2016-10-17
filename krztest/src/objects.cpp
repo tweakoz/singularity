@@ -173,6 +173,24 @@ FunData* VastObjectsDB::parseFun( const rapidjson::Value& jo, const std::string&
 	return out;
 }
 
+int NoteFromString( const std::string& snote )
+{
+	int note = -1;
+	if(snote==std::string("C")) note=0;
+	if(snote==std::string("C#")) note=1;
+	if(snote==std::string("D")) note=2;
+	if(snote==std::string("D#")) note=3;
+	if(snote==std::string("E")) note=4;
+	if(snote==std::string("F")) note=5;
+	if(snote==std::string("F#")) note=6;
+	if(snote==std::string("G")) note=7;
+	if(snote==std::string("G#")) note=8;
+	if(snote==std::string("A")) note=9;
+	if(snote==std::string("A#")) note=10;
+	if(snote==std::string("B")) note=11;
+	return note;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
@@ -190,11 +208,11 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 	// default evaluator
 	//////////////////////////////////
 
-	fblk._mods._evaluator = [=](const controlevalctx& cec) -> float
+	fblk._mods._evaluator = [=](FPARAM& cec) -> float
 	{
 		float kt = keytrack*cec._keyOff;
-		float vt = -veltrack*cec._velOff;
-		float rv = cec._coarse+cec._src1+cec._src2+kt+vt;
+		float vt = -veltrack*cec._unitVel;
+		float rv = cec._coarse+cec._C1()+cec._C2()+kt+vt;
 		//printf("kt<%f> vt<%f> rv<%f>\n", kt, vt, rv );
 		return rv;
 	};
@@ -218,11 +236,16 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 					if( scheme == std::string("PCH") )
 					{
 						assert(c["Unit"]=="st");
-						fblk._mods._evaluator = [=](const controlevalctx& cec) -> float
+						fblk._mods._evaluator = [=](FPARAM& cec) -> float
 						{
 							float kt = keytrack*cec._keyOff;
-							float vt = veltrack*cec._velOff;
-							float totcents = (cec._coarse*100)+cec._fine+cec._src1+cec._src2+kt+vt;
+							float vt = veltrack*cec._unitVel;
+							float totcents = (cec._coarse*100)
+							               + cec._fine
+							               + cec._C1()
+							               + cec._C2()
+							               + kt
+							               + vt;
 							float ratio = cents_to_linear_freq_ratio(totcents);
 							//printf( "rat<%f>\n", ratio); 
 							return totcents;
@@ -232,11 +255,17 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 					else if( scheme == std::string("POS") )
 					{
 						assert(c["Unit"]=="pct");
-						fblk._mods._evaluator = [=](const controlevalctx& cec) -> float
+						fblk._mods._evaluator = [=](FPARAM& cec) -> float
 						{
-							float kt = keytrack*cec._keyOff;
-							float vt = veltrack*cec._velOff;
-							float x = (cec._coarse)+cec._src1+cec._src2+kt+vt;
+							cec._kval = keytrack*cec._keyOff;
+							cec._vval = veltrack*cec._unitVel;
+							cec._s1val = cec._C1();
+							cec._s2val = cec._C2();
+							float x = (cec._coarse)
+							        + cec._s1val
+							        + cec._s2val
+							        + cec._kval
+							        + cec._vval;
 							return clip_float(x,-100,100);
 						};
 
@@ -245,13 +274,20 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 					{
 						assert(c["Unit"]=="dB");
 						
-						fblk._mods._evaluator = [=](const controlevalctx& cec) -> float
+						fblk._mods._evaluator = [=](FPARAM& cec) -> float
 						{
-							float kt = keytrack*cec._keyOff;
-							float vt = lerp(-veltrack,0.0f,cec._velOff);
-							float x = (cec._coarse)+cec._src1+cec._src2+kt+vt;
+							cec._kval = keytrack*cec._keyOff;
+							cec._vval = lerp(-veltrack,0.0f,cec._unitVel);
+							cec._s1val = cec._C1();
+							cec._s2val = cec._C2();
+							float x = (cec._coarse)
+							        + cec._s1val
+							        + cec._s2val
+							        + cec._kval
+							        + cec._vval;
+
 							//printf( "vt<%f> kt<%f> x<%f>\n", vt, kt, x );
-							return clip_float(x,-10,10);
+							return x;
 						};
 
 					}
@@ -259,11 +295,11 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 					{
 						assert(c["Unit"]=="dB");
 						
-						fblk._mods._evaluator = [=](const controlevalctx& cec) -> float
+						fblk._mods._evaluator = [=](FPARAM& cec) -> float
 						{
 							float kt = keytrack*cec._keyOff;
-							float vt = lerp(-veltrack,0.0f,cec._velOff);
-							float x = (cec._coarse)+cec._src1+cec._src2+kt+vt;
+							float vt = lerp(-veltrack,0.0f,cec._unitVel);
+							float x = (cec._coarse)+cec._C1()+cec._C2()+kt+vt;
 							//printf( "vt<%f> kt<%f> x<%f>\n", vt, kt, x );
 							return clip_float(x,-10,10);
 						};
@@ -280,20 +316,8 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 			{	auto toks = SplitString(v.GetString(), ' ');
 				auto snote = toks[0];
 				auto soct = toks[1];
-				int inote = 0;
+				int inote = NoteFromString(snote);
 				int ioct = atoi(soct.c_str());
-				if(snote=="C") inote=0;
-				if(snote=="C#") inote=1;
-				if(snote=="D") inote=2;
-				if(snote=="D#") inote=3;
-				if(snote=="E") inote=4;
-				if(snote=="F") inote=5;
-				if(snote=="F#") inote=6;
-				if(snote=="G") inote=7;
-				if(snote=="G#") inote=8;
-				if(snote=="A") inote=9;
-				if(snote=="A#") inote=10;
-				if(snote=="B") inote=11;
 				int midinote = ioct*12 + inote;
 				float frq = midi_note_to_frequency(midinote);
 				fblk._coarse = frq;
@@ -303,11 +327,11 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 				assert(c["Unit"]=="nt");
 
 				// note/cent evaluator
-				fblk._mods._evaluator = [=](const controlevalctx& cec) -> float
+				fblk._mods._evaluator = [=](FPARAM& cec) -> float
 				{
 					float ktcents = keytrack*cec._keyOff;
-					float vtcents = veltrack*cec._velOff;
-					float totcents = cec._src1+cec._src2+ktcents+vtcents;
+					float vtcents = veltrack*cec._unitVel;
+					float totcents = cec._C1()+cec._C2()+ktcents+vtcents;
 					float ratio = cents_to_linear_freq_ratio(totcents);
 					//printf( "fbase<%f> totc<%f> ratio<")
 					return cec._coarse*ratio;
@@ -343,6 +367,14 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 			fblk._mods._src2MinDepth = s["MinDepth"]["Value"].GetFloat();
 		if( s.HasMember("MaxDepth") )
 			fblk._mods._src2MaxDepth = s["MaxDepth"]["Value"].GetFloat();
+	}
+	if( fseg.HasMember("KeyStart") )
+	{
+		auto& i = fseg["KeyStart"];
+		fblk._keystartBipolar = i["Mode"].GetString()==std::string("Bipolar");
+		int inote = NoteFromString(i["Note"].GetString());
+		int ioct = i["Octave"].GetInt();
+		fblk._keystartNote = (ioct+1)*12 + inote;
 	}
 
 

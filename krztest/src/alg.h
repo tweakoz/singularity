@@ -2,6 +2,7 @@
 
 #include "controller.h"
 #include "filters.h"
+#include "para.h"
 #include "PolyBLEP.h"
 
 float shaper(float inp, float adj);
@@ -217,6 +218,7 @@ struct PARABASS : public DspBlock
 {
     PARABASS( const DspBlockData& dbd );
     BiQuad _biquad;
+    TrapSVF _svf;
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(const DspKeyOnInfo& koi) final;
 };
@@ -238,6 +240,8 @@ struct PARAMETRIC_EQ : public DspBlock
 {
     PARAMETRIC_EQ( const DspBlockData& dbd );
     BiQuad _biquad;
+    Fil4Paramsect _peq;
+    ParaOne _peq1;
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(const DspKeyOnInfo& koi) final;
 };
@@ -295,6 +299,21 @@ struct LOPAS2 : public DspBlock
 struct LP2RES : public DspBlock
 {   LP2RES( const DspBlockData& dbd );
     TrapSVF _filter;
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
+struct LPGATE : public DspBlock
+{   LPGATE( const DspBlockData& dbd );
+    TrapSVF _filter;
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
+struct STEEP_RESONANT_BASS : public DspBlock
+{
+    STEEP_RESONANT_BASS( const DspBlockData& dbd );
+    TrapSVF _filter1;
+    TrapSVF _filter2;
+    float _filtFC;
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(const DspKeyOnInfo& koi) final;
 };
@@ -370,7 +389,7 @@ struct Alg
     virtual void doKeyOn(DspKeyOnInfo& koi) {}
 
     void intoDspBuf(const outputBuffer& obuf, dspBlockBuffer& dspbuf);
-    void intoOutBuf(outputBuffer& obuf, const dspBlockBuffer& dspbuf);
+    void intoOutBuf(outputBuffer& obuf, const dspBlockBuffer& dspbuf, int inumo);
     DspBlock* lastBlock() const;
 
     DspBlock* _block[4];
@@ -388,7 +407,7 @@ struct Alg2 : public Alg
     int f1BlockCount() const final { return 2; }
     int f3BlockCount() const final { return 1; }
     void doKeyOn(DspKeyOnInfo& koi) final;
-    void compute(outputBuffer& obuf) final;
+    //void compute(outputBuffer& obuf) final;
 };
 struct Alg24 : public Alg
 {

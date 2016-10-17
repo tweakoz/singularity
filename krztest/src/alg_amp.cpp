@@ -23,8 +23,8 @@ panLR panBlend(float inp)
 }
 ///////////////////////////////////////////////////////////////////////////////
 
-const float kmaxclip = 8.0f; // 18dB
-const float kminclip = -8.0f;// 18dB
+const float kmaxclip = 16.0f; // 18dB
+const float kminclip = -16.0f;// 18dB
 
 AMP::AMP( const DspBlockData& dbd )
     : DspBlock(dbd)
@@ -48,8 +48,11 @@ void AMP::compute(dspBlockBuffer& obuf) //final
     const auto& layd = _layer->_layerData;
     const auto& F3 = layd->_f3Block;
     const auto& F4 = layd->_f4Block;
-    float UpperLinG = decibel_to_linear_amp_ratio(F4._v14Gain);
-    float LowerLinG = decibel_to_linear_amp_ratio(F3._v14Gain);
+
+    bool f3ena = false;;//F3._dspBlock.length()!=0;
+
+    float UpperLinG = decibel_to_linear_amp_ratio(f3ena?F3._v14Gain:F4._v14Gain);
+    float LowerLinG = decibel_to_linear_amp_ratio(f3ena?F4._v14Gain:F3._v14Gain);
 
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
     if(_numInputs==1) for( int i=0; i<inumframes; i++ )
@@ -66,7 +69,7 @@ void AMP::compute(dspBlockBuffer& obuf) //final
     else if(_numInputs==2) for( int i=0; i<inumframes; i++ )
     {
         //printf("AMPSTER\n");
-        _filt = 0.999*_filt + 0.001*gain;
+        _filt = 0.995*_filt + 0.005*gain;
         float linG = decibel_to_linear_amp_ratio(_filt);
         float ae = aenv[i];
         float totG = linG*ae*_dbd._pad;
@@ -307,8 +310,8 @@ void AMPU_AMPL::compute(dspBlockBuffer& obuf) //final
     const auto& layd = _layer->_layerData;
     const auto& F3 = layd->_f3Block;
     const auto& F4 = layd->_f4Block;
-    float UpperLinG = decibel_to_linear_amp_ratio(F4._v14Gain);
     float LowerLinG = decibel_to_linear_amp_ratio(F3._v14Gain);
+    float UpperLinG = decibel_to_linear_amp_ratio(F4._v14Gain);
 
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
     if(1) for( int i=0; i<inumframes; i++ )
@@ -321,7 +324,7 @@ void AMPU_AMPL::compute(dspBlockBuffer& obuf) //final
         float inL = lbuf[i]*_dbd._pad;
         float ae = aenv[i];
         float resU = inU*linGU*ae*UpperLinG;
-        float resL = inL*linGU*ae*LowerLinG;
+        float resL = inL*linGL*ae*LowerLinG;
 
         ubuf[i] = clip_float(resU*u_lrmix.lmix+resL*l_lrmix.lmix,kminclip,kmaxclip);
         lbuf[i] = clip_float(resU*u_lrmix.rmix+resL*l_lrmix.rmix,kminclip,kmaxclip);

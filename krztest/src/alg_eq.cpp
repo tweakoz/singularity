@@ -23,20 +23,27 @@ void PARABASS::compute(dspBlockBuffer& obuf) //final
     //if(isneg)
     //    gain *= -1.0;
 
+    if( gain > 42 )
+        gain = 42;
+
     _fval[0] = fc;
     _fval[1] = gain;
 
     _biquad.SetLowShelf(fc,gain);
-    //_filter.SetWithBWoct(EM_BPF,fc,wid);
+    if( gain<0.0f )
+        _svf.SetWithQ(EM_HPF,fc,0.5);
+    else
+        _svf.SetWithQ(EM_LPF,fc,0.5);
 
     float ling = decibel_to_linear_amp_ratio(gain);
 
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        float biq = _biquad.compute(ubuf[i]*pad);
-
-        //ubuf[i] = _filter.output*ling;
-        ubuf[i] = biq;
+        float input = ubuf[i]*pad;
+        float outp = _biquad.compute(input);
+        _svf.Tick(input);
+        outp = _svf.output;
+        ubuf[i] = outp;
     }
 
     //printf( "ff<%f> wid<%f>\n", ff, wid );
@@ -44,6 +51,7 @@ void PARABASS::compute(dspBlockBuffer& obuf) //final
 }
 void PARABASS::doKeyOn(const DspKeyOnInfo& koi) // final
 {
+    _svf.Clear();
     _biquad.Clear();
 }
 
@@ -139,20 +147,34 @@ void PARAMETRIC_EQ::compute(dspBlockBuffer& obuf) //final
     float gain = _ctrl[2].eval();
     float pad = _dbd._pad;
 
+    auto ld = _layer->_layerData;
+    const auto& F2 = ld->_f2Block;
+    const auto& F3 = ld->_f2Block;
+    float pad2 = F2._pad;
+    float pad3 = F3._pad;
+
     _fval[0] = fc;
     _fval[1] = wid;
     _fval[2] = gain;
 
-    _biquad.SetParametric(fc,wid,gain);
+    //pad = pad*pad2*pad3;
+
+    _biquad.SetParametric2(fc,wid,gain);
+    _peq1.Set(fc,wid,gain);
 
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        float biq = _biquad.compute(ubuf[i]*pad);
-        ubuf[i] = biq;
+        float inp = ubuf[i]*pad;
+        //float outp = _biquad.compute2(inp);
+        float outp = _peq1.compute(inp);
+        //outp = _peq.proc(1,ubuf,fc/48000.0f,wid,gain);
+        ubuf[i] = outp;
     }
 
 }
 void PARAMETRIC_EQ::doKeyOn(const DspKeyOnInfo& koi) // final
 {
     _biquad.Clear();
+    _peq.init();
+    _peq1.Clear();
 }

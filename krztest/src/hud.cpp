@@ -909,7 +909,7 @@ void synth::onDrawHudPage3(float width, float height)
 
     float OSC_X1 = 100;
     float OSC_Y1 = 250;
-    float OSC_W = 1400;
+    float OSC_W = 1300;
     float OSC_H = 500;
     float OSC_HH = OSC_H*0.5;
     float OSC_CY = OSC_Y1+OSC_HH;
@@ -918,7 +918,7 @@ void synth::onDrawHudPage3(float width, float height)
 
     float ANA_X1 = 100;
     float ANA_Y1 = 800;
-    float ANA_W = 1400;
+    float ANA_W = 1300;
     float ANA_H = 600;
     float ANA_HH = ANA_H*0.5;
     float ANA_CY = ANA_Y1+ANA_HH;
@@ -1048,7 +1048,7 @@ void synth::onDrawHudPage3(float width, float height)
           float midinote = frequency_to_midi_note(frq);
 
           float x = ANA_W*midinote/128.0;
-          float y = mapFFTY(dB);
+          float y = mapFFTY(dB-12);
           float xx = x+ANA_X1;
           glVertex3f(xx,y,0);      
       }
@@ -1060,7 +1060,7 @@ void synth::onDrawHudPage3(float width, float height)
       for( int n=0; n<128; n+=12 )
       {
         float db0 = i;
-        float x = ANA_W*float(n)/128.0;
+        float x = ANA_X1+ANA_W*float(n)/128.0;
         glVertex3f(x,ANA_Y1,0);      
         glVertex3f(x,ANA_Y2,0);      
 
@@ -1095,9 +1095,9 @@ void synth::onDrawHudPage3(float width, float height)
 
       auto alg = hudl->_alg;
 
-      float xb = 1600;
+      float xb = 1500;
       float yb = 90;
-      float dspw = 400;
+      float dspw = 500;
       float dsph = 344;
       float yinc = dsph+3;
 
@@ -1216,18 +1216,31 @@ void synth::onDrawHudPage3(float width, float height)
                 float s1 = b->_ctrl[idx]._C1();
                 float s2 = b->_ctrl[idx]._C2();
                 float ko = b->_ctrl[idx]._keyOff;
-                float vo = b->_ctrl[idx]._velOff;
+                float kt = b->_ctrl[idx]._keyTrack;
+                float kv = b->_ctrl[idx]._kval;
+                float vo = b->_ctrl[idx]._unitVel;
+                int ks = b->_ctrl[idx]._kstartNote;
                 char paramC = 'A'+idx;
-                auto text = formatString("P%c<%g>",paramC,tot);
+                std::string text;
+
+                if( fabs(tot) > 1 )
+                  text = formatString("P%c<%0.1f> _UV<%0.2f>",paramC,tot,vo);
+                else
+                  text = formatString("P%c<%g> _UV<%0.2f>",paramC,tot,vo);
+
                 drawtext( text, xt, yt, fontscale, 1,1,0 );
                 yt += 20;
-                text = formatString("   _c<%g> _f<%g>",coa,fin);
+
+                drawtext( formatString("   _c<%g> _f<%g>",coa,fin), xt, yt, fontscale, 1,1,0 );
+                yt += 20;
+
+                text = ( fabs(s1) > 1 ) 
+                     ? formatString("   _s1<%0.1f> _s2<%0.1f>",s1,s2)
+                     : formatString("   _s1<%g> _s2<%g>",s1,s2);
                 drawtext( text, xt, yt, fontscale, 1,1,0 );
                 yt += 20;
-                text = formatString("   _s1<%g> _s2<%g>",s1,s2);
-                drawtext( text, xt, yt, fontscale, 1,1,0 );
-                yt += 20;
-                text = formatString("   _ko<%g> _vo<%g>",ko,vo);
+
+                text = formatString("   _ks<%d> _ko<%g> _kt<%g> _kv<%g>", ks,ko,kt,kv);
                 drawtext( text, xt, yt, fontscale, 1,1,0 );
                 yt += 20;
             };

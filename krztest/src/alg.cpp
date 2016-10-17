@@ -162,7 +162,7 @@ void Alg::intoDspBuf(const outputBuffer& obuf, dspBlockBuffer& dspbuf)
     memcpy( uprbuf, lefbuf, inumframes*4 );
     memcpy( lwrbuf, lefbuf, inumframes*4 );
 }
-void Alg::intoOutBuf(outputBuffer& obuf, const dspBlockBuffer& dspbuf)
+void Alg::intoOutBuf(outputBuffer& obuf, const dspBlockBuffer& dspbuf,int inumo)
 {
     int inumframes = obuf._numframes;
     _blockBuf.resize(inumframes);
@@ -170,8 +170,16 @@ void Alg::intoOutBuf(outputBuffer& obuf, const dspBlockBuffer& dspbuf)
     float* rhtbuf = obuf._rightBuffer;
     float* uprbuf = _blockBuf._upperBuffer;
     float* lwrbuf = _blockBuf._lowerBuffer;
-    memcpy( lefbuf, uprbuf, inumframes*4 );
-    memcpy( rhtbuf, lwrbuf, inumframes*4 );
+    if( inumo == 1 )
+    {
+        memcpy( lefbuf, uprbuf, inumframes*4 );
+        memcpy( rhtbuf, uprbuf, inumframes*4 );
+    }
+    else if( inumo == 2)
+    {
+        memcpy( lefbuf, uprbuf, inumframes*4 );
+        memcpy( rhtbuf, lwrbuf, inumframes*4 );
+    }
 }
 
 void Alg::compute(outputBuffer& obuf)
@@ -179,6 +187,8 @@ void Alg::compute(outputBuffer& obuf)
     intoDspBuf(obuf,_blockBuf);
 
     bool touched = false;
+
+    int inumoutputs = 1;
 
     for( int i=0; i<4; i++ )
     {
@@ -190,14 +200,13 @@ void Alg::compute(outputBuffer& obuf)
             if( ena )
             {
                 b->compute(_blockBuf);
+                inumoutputs = b->_numOutputs;
                 touched = true;
             }
         }
     }
-    if( touched )
-    {
-        intoOutBuf(obuf,_blockBuf);
-    }
+
+    intoOutBuf(obuf,_blockBuf,inumoutputs);
 }
 
 void Alg2::doKeyOn(DspKeyOnInfo& koi) // final
@@ -211,7 +220,7 @@ void Alg2::doKeyOn(DspKeyOnInfo& koi) // final
     }*/
 }
 
-void Alg2::compute(outputBuffer& obuf) // final
+/*void Alg2::compute(outputBuffer& obuf) // final
 {
     intoDspBuf(obuf,_blockBuf);
     auto b1 = _block[0];
@@ -227,7 +236,7 @@ void Alg2::compute(outputBuffer& obuf) // final
     if( b4 && the_synth->_fblockEnable[3] )
         b4->compute(_blockBuf);
     intoOutBuf(obuf,_blockBuf);
-} 
+} */
 void Alg3::compute(outputBuffer& obuf) // final
 {
 
@@ -332,6 +341,8 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
     if( dbd._dspBlock == "2POLE LOWPASS" )
         rval = new TWOPOLE_LOWPASS(dbd);
 
+    if( dbd._dspBlock == "STEEP RESONANT BASS" )
+        rval = new STEEP_RESONANT_BASS(dbd);
     if( dbd._dspBlock == "4POLE LOPASS W/SEP" )
         rval = new FOURPOLE_LOPASS_W_SEP(dbd);
     if( dbd._dspBlock == "4POLE HIPASS W/SEP" )
@@ -346,12 +357,16 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
         rval = new BANDPASS_FILT(dbd);
     if( dbd._dspBlock == "BAND2" )
         rval = new BAND2(dbd);
+
     if( dbd._dspBlock == "LOPAS2" )
         rval = new LOPAS2(dbd);
     if( dbd._dspBlock == "LP2RES" )
         rval = new LOPAS2(dbd);
     if( dbd._dspBlock == "LOPASS" )
         rval = new LOPASS(dbd);
+    if( dbd._dspBlock == "LPGATE" )
+        rval = new LPGATE(dbd);
+
     if( dbd._dspBlock == "HIPASS" )
         rval = new HIPASS(dbd);
     if( dbd._dspBlock == "ALPASS" )
