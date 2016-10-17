@@ -214,37 +214,6 @@ struct DIST : public DspBlock
 // filter blocks
 ///////////////////////////////////////////////////////////////////////////////
 
-struct PARABASS : public DspBlock
-{
-    PARABASS( const DspBlockData& dbd );
-    BiQuad _biquad;
-    TrapSVF _svf;
-    void compute(dspBlockBuffer& obuf) final;
-    void doKeyOn(const DspKeyOnInfo& koi) final;
-};
-struct PARAMID : public DspBlock
-{
-    PARAMID( const DspBlockData& dbd );
-    BiQuad _biquad;
-    void compute(dspBlockBuffer& obuf) final;
-    void doKeyOn(const DspKeyOnInfo& koi) final;
-};
-struct PARATREBLE : public DspBlock
-{
-    PARATREBLE( const DspBlockData& dbd );
-    BiQuad _biquad;
-    void compute(dspBlockBuffer& obuf) final;
-    void doKeyOn(const DspKeyOnInfo& koi) final;
-};
-struct PARAMETRIC_EQ : public DspBlock
-{
-    PARAMETRIC_EQ( const DspBlockData& dbd );
-    BiQuad _biquad;
-    Fil4Paramsect _peq;
-    ParaOne _peq1;
-    void compute(dspBlockBuffer& obuf) final;
-    void doKeyOn(const DspKeyOnInfo& koi) final;
-};
 struct BANDPASS_FILT : public DspBlock
 {
     BANDPASS_FILT( const DspBlockData& dbd );
@@ -308,15 +277,6 @@ struct LPGATE : public DspBlock
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(const DspKeyOnInfo& koi) final;
 };
-struct STEEP_RESONANT_BASS : public DspBlock
-{
-    STEEP_RESONANT_BASS( const DspBlockData& dbd );
-    TrapSVF _filter1;
-    TrapSVF _filter2;
-    float _filtFC;
-    void compute(dspBlockBuffer& obuf) final;
-    void doKeyOn(const DspKeyOnInfo& koi) final;
-};
 struct FOURPOLE_LOPASS_W_SEP : public DspBlock
 {
     FOURPOLE_LOPASS_W_SEP( const DspBlockData& dbd );
@@ -337,13 +297,13 @@ struct FOURPOLE_HIPASS_W_SEP : public DspBlock
 };
 struct LOPASS : public DspBlock
 {   LOPASS( const DspBlockData& dbd );
-    TrapSVF _filter;
+    OnePoleLoPass _lpf;
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(const DspKeyOnInfo& koi) final;
 };
 struct HIPASS : public DspBlock
 {   HIPASS( const DspBlockData& dbd );
-    TrapSVF _filter;
+    OnePoleHiPass _hpf;
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(const DspKeyOnInfo& koi) final;
 };

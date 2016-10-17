@@ -6,6 +6,7 @@
 #include <memory.h>
 #include <stdlib.h>
 #include <complex>
+#include "krztypes.h"
 
 static const float SR = 48000.0f;
 static const float ISR = 1.0f/SR;
@@ -93,4 +94,22 @@ struct BiQuad
     float _ym1, _ym2;
     float _mfa0, _mfa1, _mfa2;
     float _mfb0, _mfb1, _mfb2;
+};
+
+struct OnePoleLoPass
+{
+    void init();
+    void set(float cutoff);
+    float compute(float inp);
+    float lp_b1, lp_a0;
+    float lp_outl;
+};
+
+struct OnePoleHiPass
+{
+    void init();
+    void set(float cutoff);
+    float compute(float inp);
+    float lp_b1, lp_a0;
+    float lp_outl;
 };

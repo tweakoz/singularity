@@ -206,7 +206,7 @@ void SynthData::genTestPrograms()
 	const int keymap_sine = 163;
 	const int keymap_saw = 151;
 
-	l1->_keymap = _objects->findKeymap(keymap_saw);
+	l1->_keymap = _objects->findKeymap(keymap_sine);
 
 	auto& EC = l1->_envCtrlData;
 	EC._useNatEnv = false;
@@ -255,7 +255,7 @@ void SynthData::genTestPrograms()
 	ALGD._name = "ALG1";
 	ALGD._algID = 1;
 
-	if( 1 )
+	if( 0 )
 	{
 		auto& F1 = l1->_f1Block;
 		F1._dspBlock = "2PARAM SHAPER";
@@ -264,7 +264,7 @@ void SynthData::genTestPrograms()
 		F1._units = "dB";
 		F1._coarse = -60.0;
 	}
-	else if( 1 )
+	else if( 0 )
 	{
 		auto& F1 = l1->_f1Block;
 		F1._blockIndex = 0;

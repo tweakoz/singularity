@@ -741,3 +741,50 @@ function calcBiquad(type, Fc, Fs, Q, peakGain) {
     }
 #endif
     //http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
+
+//=================================================
+void OnePoleLoPass::init()
+{
+    lp_b1 = 0.0f;
+    lp_a0 = 0.0f;
+    lp_outl = 0.0f;
+}
+
+void OnePoleLoPass::set(float cutoff)
+{
+    cutoff = clip_float(cutoff,10,20000);
+    float lp_cut = pi2*cutoff;
+    float lp_n = 1.0f/(lp_cut+ 3.0f*SR);
+    lp_b1 = (3*SR - lp_cut)*lp_n;
+    lp_a0 = lp_cut*lp_n;
+
+}
+float OnePoleLoPass::compute(float input)
+{
+    lp_outl = 2.0f*input*lp_a0 
+            + lp_outl*lp_b1;
+    return lp_outl;
+}
+//=================================================
+void OnePoleHiPass::init()
+{
+    lp_b1 = 0.0f;
+    lp_a0 = 0.0f;
+    lp_outl = 0.0f;
+}
+void OnePoleHiPass::set(float cutoff)
+{
+    const float SR = 48000.0f;
+    cutoff = clip_float(cutoff,0,20000);
+    float lp_cut = pi2*cutoff;
+    float lp_n = 1.0f/(lp_cut+ 3.0f*SR);
+    lp_b1 = (3.0f*SR - lp_cut)*lp_n;
+    lp_a0 = lp_cut*lp_n;
+}
+float OnePoleHiPass::compute(float input)
+{
+    lp_outl = 2.0f*input*lp_a0 
+            + lp_outl*lp_b1;
+
+    return (input-lp_outl);
+}

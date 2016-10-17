@@ -142,7 +142,28 @@ void layer::compute(outputBuffer& obuf)
         // sample osc
         ///////////////////////////////////
 
-        if( _doNoise )
+        bool do_noise = _doNoise;
+        bool do_sine = false;
+        bool do_input = false;
+
+        switch(_syn._genmode )
+        {
+            case 1: // force sine
+                do_sine = true;
+                do_noise = false;
+                break;
+            case 2: // force noise
+                do_sine = false;
+                do_noise = true;
+                break;
+            case 3: // input
+                do_sine = false;
+                do_noise = true;
+                do_input = true;
+                break;
+        }
+
+        if( do_noise )
         {
             for( int i=0; i<inumframes; i++ )
             {
@@ -151,7 +172,7 @@ void layer::compute(outputBuffer& obuf)
                 lyroutr[i] = 0.0f;
             }
         }
-        else if( _syn._doInput )
+        else if( do_input )
         {
             auto ibuf = _syn._ibuf._leftBuffer;
             for( int i=0; i<inumframes; i++ )
@@ -162,15 +183,15 @@ void layer::compute(outputBuffer& obuf)
             }
 
         }
-        else if( _syn._sinerep )
+        else if( do_sine )
         {
             float F = midi_note_to_frequency(float(_curcents)*0.01);
             float phaseinc =  pi2*F/synsr;
 
             for( int i=0; i<inumframes; i++ )
             {
-                //float o = sinf(_sinrepPH)*_preDSPGAIN*0.15;
-                float o = (((rand()&0xffff)/32768.0f)-1.0f)*_preDSPGAIN;
+                float o = sinf(_sinrepPH)*_preDSPGAIN*0.5;
+                //float o = (((rand()&0xffff)/32768.0f)-1.0f)*_preDSPGAIN;
                 _sinrepPH += phaseinc;
                 lyroutl[i] = o;
                 lyroutr[i] = 0.0f;

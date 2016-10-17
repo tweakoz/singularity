@@ -333,7 +333,7 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 					float vtcents = veltrack*cec._unitVel;
 					float totcents = cec._C1()+cec._C2()+ktcents+vtcents;
 					float ratio = cents_to_linear_freq_ratio(totcents);
-					//printf( "fbase<%f> totc<%f> ratio<")
+					//printf( "ratio<%f>\n", ratio);
 					return cec._coarse*ratio;
 				};
 

@@ -76,7 +76,7 @@ struct synth
 	float _testtoneamp;
 	float _testtoneampps;
 	int _hudpage;
-	bool _sinerep = false;
+	int _genmode = 0;
 	float _ostrack = 0.0f;
 	float _ostrackPH = 0.0f;
 	bool _bypassDSP = false;
@@ -90,7 +90,6 @@ struct synth
 	SynthData* _SD = nullptr;
 	layer* _hudLayer = nullptr;
 	bool _clearhuddata = true;
-	bool _testtone = false;
 
 };
 

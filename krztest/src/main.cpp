@@ -13,7 +13,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 //static const int kdefaultprogID = 191;
-static const int kdefaultprogID = 129;
+static const int kdefaultprogID = 81;
 static int programID = 0;
 static int octave = 4;
 static bool dokeymaps = false;
@@ -331,10 +331,6 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
           break;
 
         }
-        case 96: // '`'
-          if( ! down ) break;
-          the_synth->_testtone = ! the_synth->_testtone;
-          break;
         case '1':
           if( ! down ) break;
           the_synth->_fblockEnable[0] = ! the_synth->_fblockEnable[0];
@@ -388,16 +384,16 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
           the_synth->_hudpage = 2;
           break;
         case 'I':
-          if( ! down ) break;
-          the_synth->_ostrack -= 1.5f;
+          //if( ! down ) break;
+          the_synth->_ostrack -= 1.f;
           break;
         case 'O':
-          if( ! down ) break;
-          the_synth->_ostrack += 1.5f;
+          //if( ! down ) break;
+          the_synth->_ostrack += 1.f;
           break;
-        case '0':
+        case '`':
           if( ! down ) break;
-          the_synth->_sinerep = ! the_synth->_sinerep;
+          the_synth->_genmode = (the_synth->_genmode+1)%3;
           break;
         case 'P':
         {  auto l = the_synth->_hudLayer;

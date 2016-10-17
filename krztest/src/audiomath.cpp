@@ -128,7 +128,7 @@ float cents_to_linear_freq_ratio( float cents )
 
 float midi_note_to_frequency( float midinote )
 {
-	float frequency = (TUNING_CONSTANT) * cents_to_linear_freq_ratio( midinote * 100.0f );
+	float frequency = (TUNING_CONSTANT) * 0.5f * cents_to_linear_freq_ratio( midinote * 100.0f );
 	//orkprintf( "midinote->frequency( note: %g ) = frequency: %g\n", midinote, frequency );
 	return frequency;
 }

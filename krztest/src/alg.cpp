@@ -1,6 +1,7 @@
 #include "krztest.h"
 #include <assert.h>
 #include "filters.h"
+#include "alg_eq.h"
 
 DspBlock* createDspBlock( const DspBlockData& dbd );
 

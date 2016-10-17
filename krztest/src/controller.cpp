@@ -27,6 +27,9 @@ void FPARAM::keyOn( int ikey, int ivel )
         if( _keyOff<0 )
             _keyOff = 0;
 
+        if( _kstartNote==0 )
+            _keyOff = 0;
+
         //printf( "ikey<%d> ksn<%d> ko<%d>\n", ikey, _kstartNote, int(_keyOff) );
     }
 

@@ -133,6 +133,7 @@ void sampleOsc::setSrRatio(float pbratio)
 
 void sampleOsc::keyOn(float pbratio)
 {
+	pbratio *= 0.5f;
 
 	const layerData* ld = _lyr._layerData;
 

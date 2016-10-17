@@ -1002,7 +1002,7 @@ void synth::onDrawHudPage3(float width, float height)
       auto mapDB = [&](float re, float im) ->float
       {
           float mag = re*re+im*im;
-          float dB = 10.0f*log_base( 10.0f, mag );
+          float dB = 10.0f*log_base( 10.0f, mag )-6.0f;
           return dB;
       };
       auto mapFFTY = [&](float dbin) ->float
@@ -1010,6 +1010,8 @@ void synth::onDrawHudPage3(float width, float height)
         float dbY = (dbin+96.0f)/132.0f;
 
         float y = ANA_Y2-dbY*ANA_H;
+        if(y>ANA_Y2)
+          y=ANA_Y2;
         return y;
       };
 
@@ -1044,10 +1046,10 @@ void synth::onDrawHudPage3(float width, float height)
           //printf( "dB<%f>\n", dB);
           float fi = float(i)/float(inumframes/2);
 
-          float frq = fi*24000.0f;
+          float frq = fi*48000.0f;
           float midinote = frequency_to_midi_note(frq);
 
-          float x = ANA_W*midinote/128.0;
+          float x = ANA_W*(midinote-36.0f)/128.0;
           float y = mapFFTY(dB-12);
           float xx = x+ANA_X1;
           glVertex3f(xx,y,0);      
@@ -1084,8 +1086,9 @@ void synth::onDrawHudPage3(float width, float height)
       }
       for( int n=0; n<128; n+=12 )
       {
-        float x = ANA_X1+ANA_W*float(n)/128.0;
-        drawtext( formatString("midi\n%d",n), x,ANA_Y2+30, fontscale, .6,0,.8 );
+        float x = ANA_X1-20+ANA_W*float(n)/128.0;
+        float f = midi_note_to_frequency(n+36);
+        drawtext( formatString("  midi\n   %d\n(%d hz)",n+36,int(f)), x,ANA_Y2+30, fontscale, .6,0,.8 );
 
       }
 

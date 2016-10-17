@@ -228,7 +228,7 @@ programInst* synth::keyOn(int note,const programData* pdata )
 	_lnoteframe = 0;
 	_lnotetime = 0.0f;
 	_clearhuddata = true;
-	if( _testtone )
+	if( 0 )//_testtone )
 	{
 		float frq = midi_note_to_frequency(note);
 		_testtonepi = pi2*frq/_sampleRate;
@@ -248,7 +248,7 @@ void synth::keyOff(programInst* pinst)
 	assert(it != _activeProgInst.end() );
 	_activeProgInst.erase(it);
 	_freeProgInst.insert(pinst);
-	if( _testtone )
+	if( 0 )// _testtone )
 	{
 		_testtoneampps = slopeDBPerSample(-18,_sampleRate);
 	}
@@ -302,7 +302,7 @@ void synth::compute(int inumframes,const void* inputBuffer)
 	for( auto l : _activeVoices )
 		l->compute(_obuf);
 
-	if(_testtone )
+	if( 0 )//_testtone )
 	{
 		for( int i=0; i<inumframes; i++ )
 		{

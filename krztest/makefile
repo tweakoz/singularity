@@ -8,7 +8,11 @@ OBJS := $(patsubst src/%.cpp,$(BUILDDIR)/%.o,$(wildcard src/*.cpp))
 $(BUILDDIR)/krztest:	$(OBJS)
 	$(CXX) $(OBJS) $(CFLAGS) $(LFLAGS) -g -o $(BUILDDIR)/krztest 
 
-HDRS := src/krztest.h src/krzdata.h src/objectdb.h src/krztypes.h src/alg.h src/layer.h src/filters.h src/controller.h
+H1 := src/krztest.h src/krzdata.h src/objectdb.h src/krztypes.h
+H2 := src/layer.h src/controller.h
+H3 := src/alg.h src/alg_eq.h src/filters.h src/shelveeq.h src/para.h
+
+HDRS := $(H1) $(H2) $(H3)
 
 $(OBJS): $(BUILDDIR)/%.o: src/%.cpp $(HDRS)
 	$(CXX) $(CFLAGS) -g -c $< -o $@
