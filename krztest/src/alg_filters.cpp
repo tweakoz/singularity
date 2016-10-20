@@ -269,8 +269,8 @@ void LOPAS2::compute(dspBlockBuffer& obuf) //final
     float* ubuf = obuf._upperBuffer;
     float fc = _ctrl[0].eval();
     _fval[0] = fc;
-    float res = decibel_to_linear_amp_ratio(-6);
-    _filter.SetWithRes(EM_LPF,fc,res);
+    //float res = decibel_to_linear_amp_ratio(-6);
+    _filter.SetWithRes(EM_LPF,fc,-6);
     if(1)for( int i=0; i<inumframes; i++ )
     {
         _filter.Tick(ubuf[i]*pad);
@@ -299,7 +299,7 @@ void LP2RES::compute(dspBlockBuffer& obuf) //final
     float fc = _ctrl[0].eval();
     _fval[0] = fc;
     float res = decibel_to_linear_amp_ratio(12);
-    _filter.SetWithRes(EM_LPF,fc,res);
+    _filter.SetWithRes(EM_LPF,fc,12);
     if(1)for( int i=0; i<inumframes; i++ )
     {
         _filter.Tick(ubuf[i]*pad);
@@ -429,6 +429,34 @@ void LOPASS::doKeyOn(const DspKeyOnInfo& koi) //final
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// LPCLIP : 1 pole! lowpass
+///////////////////////////////////////////////////////////////////////////////
+
+LPCLIP::LPCLIP( const DspBlockData& dbd )
+    :DspBlock(dbd)
+{   _numParams = 1;                
+}
+
+void LPCLIP::compute(dspBlockBuffer& obuf) //final
+{
+    float pad = _dbd._pad;
+    int inumframes = obuf._numframes;
+    float* ubuf = obuf._upperBuffer;
+    float fc = _ctrl[0].eval();
+    _fval[0] = fc;
+    _lpf.set(fc);
+    if(1)for( int i=0; i<inumframes; i++ )
+    {
+        float inp = ubuf[i]*pad*4.0;
+        ubuf[i] = softsat(_lpf.compute(inp),1.0f);
+    }
+}
+
+void LPCLIP::doKeyOn(const DspKeyOnInfo& koi) //final
+{   _lpf.init();
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 HIPASS::HIPASS( const DspBlockData& dbd )
     :DspBlock(dbd)
@@ -441,13 +469,13 @@ void HIPASS::compute(dspBlockBuffer& obuf) //final
     int inumframes = obuf._numframes;
     float* ubuf = obuf._upperBuffer;
     float fc = _ctrl[0].eval();
-    _fval[0] = fc;
     _hpf.set(fc);
     if(1)for( int i=0; i<inumframes; i++ )
     {
         float inp = ubuf[i]*pad;
         ubuf[i] = _hpf.compute(inp);
     }
+    _fval[0] = fc;
 }
 
 void HIPASS::doKeyOn(const DspKeyOnInfo& koi) //final

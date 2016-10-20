@@ -106,6 +106,7 @@ struct AsrInst
     bool isValid() const;
     const AsrData* _data;
     int _curseg;
+    int _mode;
     float _atkAdjust;
     float _relAdjust;
     float _curval;
@@ -243,9 +244,9 @@ struct layer
     
     outputBuffer _layerObuf;
 
-    static const int koscopelength = 1024;
-    float _oscopebuffer[koscopelength];
-    float _fftbuffer[koscopelength/2];
+    //static const int koscopelength = 1024;
+    //float _oscopebuffer[koscopelength];
+    //float _fftbuffer[koscopelength/2];
 
 
     int _samppbnote;

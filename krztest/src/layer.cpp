@@ -42,6 +42,8 @@ layer::layer(synth& syn)
 
 void layer::compute(outputBuffer& obuf)
 {
+    hudaframe HAF;
+
     ///////////////////////
     // leave some time at the end to bview ENV hud
     ///////////////////////
@@ -68,10 +70,21 @@ void layer::compute(outputBuffer& obuf)
     _lfo1.compute(dt);
     _lfo2.compute(dt);
 
+    HAF._lfoFrames[0]._value = _lfo1._curval;
+    HAF._lfoFrames[1]._value = _lfo2._curval;
+    HAF._lfoFrames[0]._currate = _lfo1._currate;
+    HAF._lfoFrames[1]._currate = _lfo2._currate;
+
     _fun1.compute(dt);
     _fun2.compute(dt);
     _fun3.compute(dt);
     _fun4.compute(dt);
+
+    HAF._funFrames[0]._value = _fun1._curval;
+    HAF._funFrames[1]._value = _fun2._curval;
+    HAF._funFrames[2]._value = _fun4._curval;
+    HAF._funFrames[3]._value = _fun1._curval;
+
 
     _pchc1 = _pchControl1();
     _pchc2 = _pchControl2();
@@ -124,19 +137,40 @@ void layer::compute(outputBuffer& obuf)
         // AMPENV
         ///////////////////////////////////
 
+        float env1 = 0.0f;
+        float env2 = 0.0f;
+        float env3 = 0.0f;
+        float asr1 = 0.0f;
+        float asr2 = 0.0f;
+
         for( int i=0; i<inumframes; i++ )
         {
-            float env2 = _env2.compute();
-            float env3 = _env3.compute();
+            env2 = _env2.compute();
+            env3 = _env3.compute();
 
-            float asr1 = _asr1.compute();
-            float asr2 = _asr2.compute();
+            env1 = _useNatEnv 
+                 ? _natAmpEnv.compute()
+                 : _userAmpEnv.compute(); 
 
-            float ampenv = _useNatEnv 
-                         ? _natAmpEnv.compute()
-                         : _userAmpEnv.compute(); 
-            _AENV[i] = ampenv;
+            _AENV[i] = env1;
+
+            asr1 = _asr1.compute();
+            asr2 = _asr2.compute();
         }
+
+        HAF._envFrames[0]._value = env1;
+        HAF._envFrames[1]._value = env2;
+        HAF._envFrames[2]._value = env3;
+        HAF._envFrames[0]._curseg = _useNatEnv 
+                      ? _natAmpEnv._curseg
+                      : _userAmpEnv._curseg;
+        HAF._envFrames[1]._curseg = _env2._curseg; 
+        HAF._envFrames[2]._curseg = _env3._curseg;
+
+        HAF._asrFrames[0]._value = asr1;
+        HAF._asrFrames[1]._value = asr2;
+        HAF._asrFrames[0]._curseg = _asr1._curseg; 
+        HAF._asrFrames[1]._curseg = _asr2._curseg;
 
         ///////////////////////////////////
         // sample osc
@@ -273,16 +307,19 @@ void layer::compute(outputBuffer& obuf)
     // oscope
     /////////////////
 
-    int tailbegin = koscopelength-inumframes;
-    memcpy( _oscopebuffer, _oscopebuffer+inumframes, tailbegin*4 );
-    float* tailb = _oscopebuffer+tailbegin;
-
-    for( int i=0; i<inumframes; i++ )
+    if( this == _syn._hudLayer )
     {
-        float l = _layerObuf._leftBuffer[i];
-        float r = _layerObuf._rightBuffer[i];
-        tailb[i] = l;//doBlockStereo ? l+r : l;
-        //tailb[i] *= ampenv;
+        HAF._oscopebuffer.resize(inumframes);
+        for( int i=0; i<inumframes; i++ )
+        {
+            float l = _layerObuf._leftBuffer[i];
+            float r = _layerObuf._rightBuffer[i];
+            //tailb[i] = l;//doBlockStereo ? l+r : l;
+            HAF._oscopebuffer[i]=l;
+        }
+
+        _syn._hudbuf.push(HAF);
+
     }
 
     _layerTime += dt;
@@ -459,6 +496,13 @@ void layer::keyOn( int note, int vel, const layerData* ld )
     const auto& F4 = ld->_f4Block;
     const auto& ENVC = ld->_envCtrlData;
 
+    hudkframe HKF;
+
+    HKF._note = note;
+    HKF._vel = vel;
+    HKF._layerdata = ld;
+    HKF._layerIndex = _ldindex;
+
     _useNatEnv = ENVC._useNatEnv;
     _ignoreRelease = ld->_ignRels;
     _curnote = note;
@@ -470,10 +514,10 @@ void layer::keyOn( int note, int vel, const layerData* ld )
     _lfo1.reset();
     _lfo2.reset();
 
-    for( int i=0; i<koscopelength/2; i++ )
-    {
-        _fftbuffer[i] = 0.0f;
-    }
+    //for( int i=0; i<koscopelength/2; i++ )
+   // {
+     //   _fftbuffer[i] = 0.0f;
+    //}
 
     _layerTime = 0.0f;
 
@@ -525,7 +569,7 @@ void layer::keyOn( int note, int vel, const layerData* ld )
     printf( "layer<%d> region<%p>\n", _ldindex, region );
     if( region )
     {
-        assert(region);
+        HKF._kmregion = region;
 
         _kmregion = region;
 
@@ -635,11 +679,15 @@ void layer::keyOn( int note, int vel, const layerData* ld )
         _alg->keyOn(koi);
     }
 
+    HKF._alg = _alg;
+
     ///////////////////////////////////////
 
     _lyrPhase = 0;
     _phCounter = 0;
     _sinrepPH = 0.0f;
+
+    _syn._hudbuf.push(HKF);
 
 }
 

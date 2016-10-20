@@ -81,7 +81,6 @@ DspBlock* Alg::lastBlock() const
 void Alg::keyOn(DspKeyOnInfo& koi)
 {
     auto l = koi._layer;
-
     assert(l!=nullptr);
 
     for( int i=0; i<4; i++ )
@@ -93,9 +92,25 @@ void Alg::keyOn(DspKeyOnInfo& koi)
     const auto& F3D = ld->_f3Block;
     const auto& F4D = ld->_f4Block;
 
-    int numoutputs = 1;
+    if( F1D._dspBlock.length() )
+        _block[0] = createDspBlock(F1D);
+    if( F2D._dspBlock.length() )
+        _block[1] = createDspBlock(F2D);
+    if( F3D._dspBlock.length() )
+        _block[2] = createDspBlock(F3D);
+    if( F4D._dspBlock.length() )
+        _block[3] = createDspBlock(F4D);
+
+    doKeyOn(koi);
+}
+
+void Alg::doKeyOn(DspKeyOnInfo& koi)
+{
+    auto l = koi._layer;
+    assert(l!=nullptr);
 
     koi._prv = nullptr;
+    int numoutputs = 1;
     auto procblock = [&numoutputs,&koi](DspBlock* thisblock,layer*l)
     {
         if( thisblock )
@@ -108,33 +123,24 @@ void Alg::keyOn(DspKeyOnInfo& koi)
 
     };
 
-    if( F1D._dspBlock.length() )
-    {
-        _block[0] = createDspBlock(F1D);
+    if( _block[0] )
         procblock( _block[0],l );
-        printf( "createF1<%s>\n",F1D._dspBlock.c_str() );
-    }
-    if( F2D._dspBlock.length() )
-    {
-        _block[1] = createDspBlock(F2D);
+    if( _block[1] )
         procblock( _block[1],l );
-        printf( "createF2<%s>\n",F2D._dspBlock.c_str() );
-    }
-    if( F3D._dspBlock.length() )
-    {
-        _block[2] = createDspBlock(F3D);
+    if( _block[2] )
         procblock( _block[2],l );
-        printf( "createF3<%s>\n",F3D._dspBlock.c_str() );
-    }
-    if( F4D._dspBlock.length() )
-    {
-        _block[3] = createDspBlock(F4D);
+    if( _block[3] )
         procblock( _block[3],l );
-        printf( "createF4<%s> b4<%p>\n",F4D._dspBlock.c_str(), _block[3] );
-    }
-    //const auto& F1D = ld->_ampBlock;
 
-    doKeyOn(koi);
+
+}
+
+void Alg10::doKeyOn(DspKeyOnInfo& koi)
+{
+    if( _block[1] )
+        _block[1]->_useLowerInput = true;
+
+    Alg::doKeyOn(koi);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -212,6 +218,7 @@ void Alg::compute(outputBuffer& obuf)
 
 void Alg2::doKeyOn(DspKeyOnInfo& koi) // final
 {
+    Alg::doKeyOn(koi);
     /*if( _block[2] )
         _block[2]->_numOutputs=2;
     if( _block[3] )
@@ -296,18 +303,20 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
         rval = new PLUSAMP(dbd);
     if( dbd._dspBlock == "x AMP")
         rval = new XAMP(dbd);
-    if( dbd._dspBlock == "AMP U   AMP L")
-        rval = new AMPU_AMPL(dbd);
     if( dbd._dspBlock == "PANNER" )
         rval = new PANNER(dbd);
-    if( dbd._dspBlock == "AMP U  AMPL" )
+    if( dbd._dspBlock == "AMP U   AMP L")
         rval = new AMPU_AMPL(dbd);
+    if( dbd._dspBlock == "! AMP" )
+        rval = new BANGAMP(dbd);
 
     ////////////////////////
     // osc/gen
     ////////////////////////
 
     if( dbd._dspBlock == "SINE")
+        rval = new SINE(dbd);
+    if( dbd._dspBlock == "LF SIN")
         rval = new SINE(dbd);
     if( dbd._dspBlock == "SAW")
         rval = new SAW(dbd);
@@ -319,6 +328,12 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
         rval = new SAWPLUS(dbd);
     if( dbd._dspBlock == "SW+SHP" )
         rval = new SWPLUSSHP(dbd);
+    if( dbd._dspBlock == "+ SHAPEMOD OSC" )
+        rval = new PLUSSHAPEMODOSC(dbd);
+    if( dbd._dspBlock == "SHAPE MOD OSC" )
+        rval = new SHAPEMODOSC(dbd);
+
+
 
     ////////////////////////
     // EQ
@@ -365,6 +380,8 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
         rval = new LOPAS2(dbd);
     if( dbd._dspBlock == "LOPASS" )
         rval = new LOPASS(dbd);
+    if( dbd._dspBlock == "LPCLIP" )
+        rval = new LPCLIP(dbd);
     if( dbd._dspBlock == "LPGATE" )
         rval = new LPGATE(dbd);
 

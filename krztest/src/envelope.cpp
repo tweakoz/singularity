@@ -17,6 +17,7 @@ AsrInst::AsrInst()
     , _curslope_persamp(0.0f)
     , _curseg(-1)
     , _released(false)
+    , _mode(0)
 {
 
 }
@@ -25,7 +26,7 @@ AsrInst::AsrInst()
 
 void AsrInst::initSeg(int iseg)
 {
-    printf( "AsrInst<%p> _data<%p> initSeg<%d>\n", this, _data, iseg );
+    //printf( "AsrInst<%p> _data<%p> initSeg<%d>\n", this, _data, iseg );
 
     if(!_data) return;
 
@@ -81,8 +82,26 @@ float AsrInst::compute()
 
     const auto& edata = *_data;
     _framesrem--;
-    if( _curseg==0 && _framesrem<=0 )
-        initSeg(1);
+    if( _framesrem<=0 )
+    {
+        switch( _mode )
+        {
+            case 0: // normal
+                if( _curseg<3  )
+                    initSeg(_curseg+1);
+                break;
+            case 1: // hold
+                if( _curseg==0  )
+                    initSeg(1);
+                break;
+            case 2: // repeat
+                if( _curseg<3  )
+                    initSeg(_curseg+1);
+                else
+                    initSeg(0);
+                break;
+        }
+    }
 
     _curval += _curslope_persamp;
     _curval = clip_float(_curval,0.0f,1.0f);
@@ -101,6 +120,13 @@ void AsrInst::keyOn(const layerData* ld, const AsrData* data)
     assert(_data);
     _curval = 0.0f;
     _released = false;
+    if( _data->_mode == "Normal")
+        _mode = 0;
+    if( _data->_mode == "Hold")
+        _mode = 1;
+    if( _data->_mode == "Repeat")
+        _mode = 2;
+
     initSeg(0);
 }
 
@@ -231,7 +257,7 @@ float RateLevelEnvInst::compute()
 
     _filtval = _filtval*0.995f + _curval*0.005f;
 
-    return clip_float(powf(_filtval,2.0f),-1.0f,1.0f);
+    return clip_float(powf(_filtval,3.0f),-1.0f,1.0f);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

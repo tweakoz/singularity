@@ -137,12 +137,12 @@ void DIST::compute(dspBlockBuffer& obuf) //final
     float* ubuf = obuf._upperBuffer;
     float adj = _ctrl[0].eval();
     _fval[0] = adj;
-    float ratio = decibel_to_linear_amp_ratio(adj-30.0)*pad;
+    float ratio = decibel_to_linear_amp_ratio(adj+30.0)*pad;
 
     if(1) for( int i=0; i<inumframes; i++ )
     {   
         float v = ubuf[i]*ratio;
-        v = clip_float(v,-1,1);
+        v = softsat(v,1);
         ubuf[i] = v;
     }
 }

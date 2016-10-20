@@ -56,6 +56,8 @@ struct DspBlock
 
     float _fval[3];
     FPARAM _ctrl[3];
+
+    bool _useLowerInput = false;
 };  
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -100,6 +102,20 @@ struct SQUARE : public DspBlock
 struct SINEPLUS : public DspBlock
 {
     SINEPLUS( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    PolyBLEP _pblep;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
+struct SHAPEMODOSC : public DspBlock
+{
+    SHAPEMODOSC( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    PolyBLEP _pblep;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
+struct PLUSSHAPEMODOSC : public DspBlock
+{
+    PLUSSHAPEMODOSC( const DspBlockData& dbd );
     void compute(dspBlockBuffer& obuf) final;
     PolyBLEP _pblep;
     void doKeyOn(const DspKeyOnInfo& koi) final;
@@ -209,6 +225,13 @@ struct DIST : public DspBlock
     DIST( const DspBlockData& dbd );
     void compute(dspBlockBuffer& obuf) final;
 };
+struct BANGAMP : public DspBlock
+{
+    BANGAMP( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+    float _smooth;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // filter blocks
@@ -301,6 +324,12 @@ struct LOPASS : public DspBlock
     void compute(dspBlockBuffer& obuf) final;
     void doKeyOn(const DspKeyOnInfo& koi) final;
 };
+struct LPCLIP : public DspBlock
+{   LPCLIP( const DspBlockData& dbd );
+    OnePoleLoPass _lpf;
+    void compute(dspBlockBuffer& obuf) final;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
 struct HIPASS : public DspBlock
 {   HIPASS( const DspBlockData& dbd );
     OnePoleHiPass _hpf;
@@ -346,7 +375,7 @@ struct Alg
     virtual int f3BlockCount() const { return 0; }
     virtual int f4BlockCount() const { return 0; }
     virtual void compute(outputBuffer& obuf);
-    virtual void doKeyOn(DspKeyOnInfo& koi) {}
+    virtual void doKeyOn(DspKeyOnInfo& koi);
 
     void intoDspBuf(const outputBuffer& obuf, dspBlockBuffer& dspbuf);
     void intoOutBuf(outputBuffer& obuf, const dspBlockBuffer& dspbuf, int inumo);
@@ -381,4 +410,9 @@ struct Alg3 : public Alg
     int f1BlockCount() const final { return 2; }
     int f3BlockCount() const final { return 2; }
     void compute(outputBuffer& obuf) final;
+};
+
+struct Alg10 : public Alg
+{
+    void doKeyOn(DspKeyOnInfo& koi) final;
 };

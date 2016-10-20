@@ -3,6 +3,8 @@
 #include "krztypes.h"
 #include "krzdata.h"
 #include "layer.h"
+#include "concurrent_queue.hpp"
+#include "svariant.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -20,6 +22,49 @@ struct programInst
 	synth& _syn;
 
 	std::vector<layer*> _layers;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+static const int koscopelength = 1024;
+
+struct hudkframe
+{
+	int _note = 0;
+	int _vel = 0;
+	int _layerIndex = -1;
+	const layerData* _layerdata = nullptr;
+    const kmregion* _kmregion = nullptr;
+    Alg* _alg = nullptr;
+
+
+};
+
+struct envframe
+{
+	float _value = 0.0f;
+	int _curseg = 0;
+};
+struct lfoframe
+{
+	float _value = 0.0f;
+	float _currate = 1.0f;
+};
+struct funframe
+{
+	float _value = 0.0f;
+	float _a = 0.0f;
+	float _b = 0.0f;
+};
+struct hudaframe
+{
+	hudaframe() : _oscopebuffer(256) {}
+    std::vector<float> _oscopebuffer;
+
+    envframe _envFrames[3];
+    envframe _asrFrames[2];
+    lfoframe _lfoFrames[2];
+    funframe _funFrames[4];
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -91,6 +136,13 @@ struct synth
 	layer* _hudLayer = nullptr;
 	bool _clearhuddata = true;
 
+	ork::mpmc_bounded_queue<ork::svar256_t> _hudbuf;
+
+	hudkframe _curhud_kframe;
+	hudaframe _curhud_aframe;
+
+    float _fftbuffer[koscopelength/2];
+    float _oscopebuffer[koscopelength];
 };
 
 ///////////////////////////////////////////////////////////////////////////////

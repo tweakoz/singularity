@@ -88,8 +88,8 @@ void TrapSVF::SetWithRes(eFilterMode mode, float center, float res)
 
     // Q = fC/dF
 
-    res = clip_float(res,0.01f,48.0f);
-    auto Q = res*0.25; //clip_float(1.0f/(2*1-res),0.001,50.0f);
+    //res = clip_float(res,0.01f,48.0f);
+    auto Q = 1.0f/(2*(1.0f-res));
     //printf( "center<%f> res<%f> Q<%f>\n", center, res, Q );
     SetWithQ( mode, center, Q );
 }

@@ -181,7 +181,7 @@ void PARAMETRIC_EQ::compute(dspBlockBuffer& obuf) //final
     float* ubuf = obuf._upperBuffer;
 
     float fc = _ctrl[0].eval();
-    float wid = _ctrl[1].eval();        
+    float wid = clip_float(_ctrl[1].eval(),0.2,8);        
     float gain = _ctrl[2].eval();
     float pad = _dbd._pad;
 

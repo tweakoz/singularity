@@ -317,7 +317,7 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 				auto snote = toks[0];
 				auto soct = toks[1];
 				int inote = NoteFromString(snote);
-				int ioct = atoi(soct.c_str());
+				int ioct = atoi(soct.c_str())+1;
 				int midinote = ioct*12 + inote;
 				float frq = midi_note_to_frequency(midinote);
 				fblk._coarse = frq;
@@ -331,8 +331,10 @@ void VastObjectsDB::parseFBlock( const Value& fseg, FBlockData& fblk )
 				{
 					float ktcents = keytrack*cec._keyOff;
 					float vtcents = veltrack*cec._unitVel;
+					cec._vval = veltrack*cec._unitVel;
 					float totcents = cec._C1()+cec._C2()+ktcents+vtcents;
 					float ratio = cents_to_linear_freq_ratio(totcents);
+					//printf( "vtcents<%f> ratio<%f>\n", vtcents, ratio );
 					//printf( "ratio<%f>\n", ratio);
 					return cec._coarse*ratio;
 				};

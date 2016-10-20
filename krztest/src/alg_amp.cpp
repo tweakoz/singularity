@@ -196,12 +196,14 @@ void GAIN::compute(dspBlockBuffer& obuf) //final
     float linG = decibel_to_linear_amp_ratio(gain);
 
     int inumframes = obuf._numframes;
-    float* ubuf = obuf._upperBuffer;
+    float* inpbuf = _useLowerInput 
+                  ? obuf._lowerBuffer
+                  : obuf._upperBuffer;
 
     //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
     if(1) for( int i=0; i<inumframes; i++ )
-    {   float inp = ubuf[i]*_dbd._pad;
-        ubuf[i] = inp*linG;
+    {   float inp = inpbuf[i]*_dbd._pad;
+        inpbuf[i] = inp*linG;
     }
 }
 
@@ -413,4 +415,51 @@ void PANNER::doKeyOn(const DspKeyOnInfo& koi) //final
 {   _plmix = 0.0f;
     _prmix = 0.0f;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+BANGAMP::BANGAMP( const DspBlockData& dbd )
+    : DspBlock(dbd)
+{   _numParams = 1;
+    _numInputs = 2;  
+}
+
+void BANGAMP::compute(dspBlockBuffer& obuf) //final
+{
+    float gain = _ctrl[0].eval();//,0.01f,100.0f);
+
+    int inumframes = obuf._numframes;
+    float* ubuf = obuf._upperBuffer;
+    float* lbuf = obuf._lowerBuffer;
+
+    float* aenv = _layer->_AENV;
+    const auto& layd = _layer->_layerData;
+    const auto& F3 = layd->_f3Block;
+    const auto& F4 = layd->_f4Block;
+    float UpperLinG = decibel_to_linear_amp_ratio(F4._v14Gain);
+    float LowerLinG = decibel_to_linear_amp_ratio(F3._v14Gain);
+
+    //printf( "frq<%f> _phaseInc<%lld>\n", frq, _phaseInc );
+    if(1) for( int i=0; i<inumframes; i++ )
+    {   
+        _smooth = 0.999*_smooth + 0.001*gain;
+        float linG = decibel_to_linear_amp_ratio(_smooth);
+        float inU = ubuf[i]*_dbd._pad;
+        float inL = lbuf[i]*_dbd._pad;
+        float ae = aenv[i];
+        float res = (inU+inL);
+        res = shaper(res,.25)*linG*ae*UpperLinG;
+        lbuf[i] = res;
+        ubuf[i] = res;
+    }
+    _fval[0] = _smooth;
+}
+
+void BANGAMP::doKeyOn(const DspKeyOnInfo& koi) //final
+{   _smooth = 0.0f;
+}
+
 
