@@ -329,8 +329,6 @@ void FOURPOLE_LOPASS_W_SEP::compute(dspBlockBuffer& obuf) //final
     float sep = _ctrl[2].eval();
 
 
-    _fval[1] = res;
-    _fval[2] = sep;
     float ratio = cents_to_linear_freq_ratio(sep);
 
 
@@ -346,7 +344,9 @@ void FOURPOLE_LOPASS_W_SEP::compute(dspBlockBuffer& obuf) //final
     }
 
     _fval[0] = _filtFC;
-    //printf( "ff<%f> res<%f>\n", ff, res );
+    _fval[1] = res;
+    _fval[2] = sep;
+    //printf( "fc<%f> res<%f> sep<%f>\n", fc, res, sep );
 
 }
 
@@ -378,6 +378,7 @@ void FOURPOLE_HIPASS_W_SEP::compute(dspBlockBuffer& obuf) //final
     _fval[0] = _filtFC;
     _fval[1] = res;
     _fval[2] = sep;
+
     float ratio = cents_to_linear_freq_ratio(sep);
 
     _filter1.SetWithRes(EM_HPF,_filtFC,res);
@@ -390,6 +391,7 @@ void FOURPOLE_HIPASS_W_SEP::compute(dspBlockBuffer& obuf) //final
         ubuf[i] = _filter2.output;
     }
 
+    //printf( "fc<%f> res<%f> sep<%f>\n", fc, res, sep );
     //printf( "ff<%f> res<%f>\n", ff, res );
 
 }
@@ -417,10 +419,13 @@ void LOPASS::compute(dspBlockBuffer& obuf) //final
     float fc = _ctrl[0].eval();
     _fval[0] = fc;
     _lpf.set(fc);
+
+    float* inpbuf = getInpBuf1(obuf); 
+
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        float inp = ubuf[i]*pad;
-        ubuf[i] = _lpf.compute(inp);
+        float inp = inpbuf[i]*pad;
+        output1(obuf,i, _lpf.compute(inp) );
     }
 }
 
@@ -467,13 +472,15 @@ void HIPASS::compute(dspBlockBuffer& obuf) //final
 {
     float pad = _dbd._pad;
     int inumframes = obuf._numframes;
-    float* ubuf = obuf._upperBuffer;
     float fc = _ctrl[0].eval();
     _hpf.set(fc);
+
+    float* inpbuf = getInpBuf1(obuf); 
+
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        float inp = ubuf[i]*pad;
-        ubuf[i] = _hpf.compute(inp);
+        float inp = inpbuf[i]*pad;
+        output1(obuf,i, _hpf.compute(inp) );
     }
     _fval[0] = fc;
 }
@@ -567,13 +574,16 @@ void ALPASS::compute(dspBlockBuffer& obuf) // final
 {
     float pad = _dbd._pad;
     int inumframes = obuf._numframes;
-    float* ubuf = obuf._upperBuffer;
+
     float fc = _ctrl[0].eval();
     _filter.Set(fc);
     _fval[0] = fc;
+
+    float* inpbuf = getInpBuf1(obuf); 
+
     if(1)for( int i=0; i<inumframes; i++ )
     {
-        ubuf[i] = _filter.Tick(ubuf[i]*pad);
+        output1(obuf,i, _filter.Tick(inpbuf[i]*pad) );
     }
 }
 

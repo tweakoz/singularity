@@ -128,6 +128,51 @@ void FunInst::keyOn(const layer* l, const FunData* data)
             return (*state1);
         };
     }
+    else if( op=="a OR b" )
+    {
+        auto state1 = new float(0.0f);
+        _op = [=]()->float{
+            bool a = (this->_a()>0.5f);
+            bool b = (this->_b()>0.5f);
+            return float(a or b);
+        };
+    }
+    else if( op=="max(a,b)" )
+    {
+        auto state1 = new float(0.0f);
+        _op = [=]()->float{
+            float a = this->_a();
+            float b = this->_b();
+            return (a>b) ? a : b;
+        };
+    }
+    else if( op=="min(a,b)" )
+    {
+        auto state1 = new float(0.0f);
+        _op = [=]()->float{
+            float a = this->_a();
+            float b = this->_b();
+            return (a<b) ? a : b;
+        };
+    }
+    else if( op=="(a+2b)/3" )
+    {
+        auto state1 = new float(0.0f);
+        _op = [=]()->float{
+            float a = this->_a();
+            float b = this->_b();
+            return (a+2.0f*b)*0.3333333f;
+        };
+    }
+    else if( op=="|a-b|" )
+    {
+        auto state1 = new float(0.0f);
+        _op = [=]()->float{
+            float a = this->_a();
+            float b = this->_b();
+            return fabs(a-b);
+        };
+    }
 }
 void FunInst::keyOff()
 {

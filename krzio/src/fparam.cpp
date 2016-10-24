@@ -212,6 +212,23 @@ void getFParamWID( fparam& fp )
     fp._varSrc2MaxDepth.set<float>("MaxDepth","oct","%%0.01f", maxDpt);
 }
 
+void getFParamPWM( fparam& fp )
+{
+    int keytrk = makeSigned(fp._inputKeyTrack);
+    float veltrk = makeSigned(fp._inputVelTrack);
+    float depth = makeSigned(fp._inputDepth);
+    float minDpt = makeSigned(fp._inputMinDepth);
+    float maxDpt = makeSigned(fp._inputMaxDepth);
+
+    fp._varCoarseAdjust.set<float>("Coarse","pct","%d", int(fp._inputCourse) );
+
+    fp._varKeyTrack.set<float>("KeyTrack","pct/key","%%0.01f", float(keytrk)*0.1f);
+    fp._varVelTrack.set<float>("VelTrack","pct","%d", veltrk );
+    fp._varSrc1Depth.set<float>("Depth","pct","%d", depth);
+    fp._varSrc2MinDepth.set<float>("MinDepth","pct","%d", minDpt);
+    fp._varSrc2MaxDepth.set<float>("MaxDepth","pct","%d", maxDpt);
+}
+
 void getFParamSEP( fparam& fp )
 {
     int keytrk = 2*makeSigned(fp._inputKeyTrack);

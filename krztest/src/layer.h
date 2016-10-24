@@ -3,6 +3,18 @@
 #include <mutex>
 #include "alg.h"
 
+struct hudkframe
+{
+    int _note = 0;
+    int _vel = 0;
+    int _layerIndex = -1;
+    const layerData* _layerdata = nullptr;
+    const kmregion* _kmregion = nullptr;
+    Alg* _alg = nullptr;
+
+
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 
 struct sampleOsc
@@ -195,6 +207,7 @@ struct layer
     sampleOsc _spOsc;
     synth& _syn;
     int _curnote;
+    int _curvel;
     int _ldindex;
     float _layerGain;
     float _curSampSRratio;
@@ -248,6 +261,7 @@ struct layer
     //float _oscopebuffer[koscopelength];
     //float _fftbuffer[koscopelength/2];
 
+    hudkframe _HKF;
 
     int _samppbnote;
 

@@ -13,7 +13,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 //static const int kdefaultprogID = 191;
-static const int kdefaultprogID = 80;
+static const int kdefaultprogID = 11;
 static int programID = 0;
 static int octave = 4;
 static bool dokeymaps = false;
@@ -454,7 +454,7 @@ void runUI()
       return;
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(1024, 768, "KrzTest", NULL, NULL);
+    window = glfwCreateWindow(1152, 760, "KrzTest", NULL, NULL);
     if (!window)
     {
       glfwTerminate();

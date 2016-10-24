@@ -57,11 +57,83 @@ void DspBlock::keyOn(const DspKeyOnInfo& koi)
     doKeyOn(koi);
 }
 
+float* DspBlock::getInpBuf1(dspBlockBuffer& obuf)
+{
+    assert((_inputMask==1) || (_inputMask==2));
+    return (_inputMask==1)
+           ? obuf._upperBuffer
+           : obuf._lowerBuffer;
+}
+float* DspBlock::getOutBuf1(dspBlockBuffer& obuf)
+{
+    assert((_outputMask==1) || (_outputMask==2));
+    return (_outputMask==1)
+           ? obuf._upperBuffer
+           : obuf._lowerBuffer;
+}
+
+void DspBlock::output1(dspBlockBuffer& obuf,int index,float val)
+{
+    float* U = obuf._upperBuffer;
+    float* L = obuf._lowerBuffer;
+
+    switch(_inputMask)
+    {
+        case kmaskUPPER:
+            U[index] = val;
+            break;
+        case kmaskLOWER:
+            L[index] = val;
+            break;
+        case kmaskBOTH:
+            U[index] = val;
+            L[index] = val;
+            break;
+
+    } 
+}
+
+float DspBlock::outputGainU()
+{
+    const auto& layd = _layer->_layerData;
+    const auto& F3 = layd->_f3Block;
+    const auto& F4 = layd->_f4Block;
+    float f3gain = decibel_to_linear_amp_ratio(F3._v14Gain);
+    //float f4gain = decibel_to_linear_amp_ratio(F4._v14Gain);
+    return f3gain;
+}
+float DspBlock::outputGainL()
+{
+    const auto& layd = _layer->_layerData;
+    const auto& F3 = layd->_f3Block;
+    const auto& F4 = layd->_f4Block;
+    //float f3gain = decibel_to_linear_amp_ratio(F3._v14Gain);
+    float f4gain = decibel_to_linear_amp_ratio(F4._v14Gain);
+    return f4gain;
+}
+float DspBlock::outputGainSINGLE()
+{
+    const auto& layd = _layer->_layerData;
+    const auto& F4 = layd->_f4Block;
+    //assert(_numOutputs==1);
+    float f4gain = decibel_to_linear_amp_ratio(F4._v14Gain);
+    return f4gain;
+}
+
+int DspBlock::numOutputs() const
+{
+    return (_outputMask==kmaskBOTH) ? 2 : 1;
+}
+int DspBlock::numInputs() const
+{
+    return (_inputMask==kmaskBOTH) ? 2 : 1;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 Alg::Alg()
 {
-    for( int i=0; i<4; i++ )
+    for( int i=0; i<kmaxblocks; i++ )
         _block[i] = nullptr;
 }
 
@@ -70,7 +142,7 @@ Alg::Alg()
 DspBlock* Alg::lastBlock() const
 {
     DspBlock* r = nullptr;
-    for( int i=0; i<4; i++ )
+    for( int i=0; i<kmaxblocks; i++ )
         if( _block[i] )
             r = _block[i];
     return r;
@@ -83,7 +155,7 @@ void Alg::keyOn(DspKeyOnInfo& koi)
     auto l = koi._layer;
     assert(l!=nullptr);
 
-    for( int i=0; i<4; i++ )
+    for( int i=0; i<kmaxblocks; i++ )
         _block[i] = nullptr;
 
     const auto ld = l->_layerData;    
@@ -93,13 +165,13 @@ void Alg::keyOn(DspKeyOnInfo& koi)
     const auto& F4D = ld->_f4Block;
 
     if( F1D._dspBlock.length() )
-        _block[0] = createDspBlock(F1D);
+        _block[1] = createDspBlock(F1D);
     if( F2D._dspBlock.length() )
-        _block[1] = createDspBlock(F2D);
+        _block[2] = createDspBlock(F2D);
     if( F3D._dspBlock.length() )
-        _block[2] = createDspBlock(F3D);
+        _block[3] = createDspBlock(F3D);
     if( F4D._dspBlock.length() )
-        _block[3] = createDspBlock(F4D);
+        _block[4] = createDspBlock(F4D);
 
     doKeyOn(koi);
 }
@@ -123,37 +195,11 @@ void Alg::doKeyOn(DspKeyOnInfo& koi)
 
     };
 
-    if( _block[0] )
-        procblock( _block[0],l );
-    if( _block[1] )
-        procblock( _block[1],l );
-    if( _block[2] )
-        procblock( _block[2],l );
-    if( _block[3] )
-        procblock( _block[3],l );
+    for( int i=0; i<kmaxblocks; i++ )
+        if( _block[i] )
+            procblock( _block[i],l );
 
 
-}
-
-void Alg10::doKeyOn(DspKeyOnInfo& koi)
-{
-    if( _block[1] )
-        _block[1]->_useLowerInput = true;
-
-    Alg::doKeyOn(koi);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-void Alg::keyOff()
-{
-    for( int i=0; i<4; i++ )
-    {
-        auto b = _block[i];
-        if( b ) 
-            b->doKeyOff();
-        //_block[i] = nullptr;
-    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -177,16 +223,8 @@ void Alg::intoOutBuf(outputBuffer& obuf, const dspBlockBuffer& dspbuf,int inumo)
     float* rhtbuf = obuf._rightBuffer;
     float* uprbuf = _blockBuf._upperBuffer;
     float* lwrbuf = _blockBuf._lowerBuffer;
-    if( inumo == 1 )
-    {
-        memcpy( lefbuf, uprbuf, inumframes*4 );
-        memcpy( rhtbuf, uprbuf, inumframes*4 );
-    }
-    else if( inumo == 2)
-    {
-        memcpy( lefbuf, uprbuf, inumframes*4 );
-        memcpy( rhtbuf, lwrbuf, inumframes*4 );
-    }
+    memcpy( lefbuf, uprbuf, inumframes*4 );
+    memcpy( rhtbuf, lwrbuf, inumframes*4 );
 }
 
 void Alg::compute(outputBuffer& obuf)
@@ -197,17 +235,17 @@ void Alg::compute(outputBuffer& obuf)
 
     int inumoutputs = 1;
 
-    for( int i=0; i<4; i++ )
+    for( int i=0; i<kmaxblocks; i++ )
     {
         auto b = _block[i];
         if( b )
         {   
-            bool ena = the_synth->_fblockEnable[i];
+            bool ena = the_synth->_fblockEnable[i-1];
 
             if( ena )
             {
                 b->compute(_blockBuf);
-                inumoutputs = b->_numOutputs;
+                inumoutputs = b->numOutputs();
                 touched = true;
             }
         }
@@ -216,38 +254,149 @@ void Alg::compute(outputBuffer& obuf)
     intoOutBuf(obuf,_blockBuf,inumoutputs);
 }
 
-void Alg2::doKeyOn(DspKeyOnInfo& koi) // final
+///////////////////////////////////////////////////////////////////////////////
+
+void Alg::keyOff()
 {
-    Alg::doKeyOn(koi);
-    /*if( _block[2] )
-        _block[2]->_numOutputs=2;
-    if( _block[3] )
+    for( int i=0; i<kmaxblocks; i++ )
     {
-        _block[3]->_numInputs=2;
-        _block[3]->_numOutputs=2;
-    }*/
+        auto b = _block[i];
+        if( b ) 
+            b->doKeyOff();
+        //_block[i] = nullptr;
+    }
 }
 
-/*void Alg2::compute(outputBuffer& obuf) // final
-{
-    intoDspBuf(obuf,_blockBuf);
-    auto b1 = _block[0];
-    auto b2 = _block[1];
-    auto b3 = _block[2];
-    auto b4 = _block[3];
-    if( b1 && the_synth->_fblockEnable[0] )
-        b1->compute(_blockBuf);
-    if( b2 && the_synth->_fblockEnable[1] )
-        b2->compute(_blockBuf);
-    if( b3 && the_synth->_fblockEnable[2] )
-        b3->compute(_blockBuf);
-    if( b4 && the_synth->_fblockEnable[3] )
-        b4->compute(_blockBuf);
-    intoOutBuf(obuf,_blockBuf);
-} */
-void Alg3::compute(outputBuffer& obuf) // final
-{
+///////////////////////////////////////////////////////////////////////////////
 
+void Alg2::doKeyOn(DspKeyOnInfo& koi) // final
+{
+    if( _block[3] )
+        _block[3]->_outputMask = kmaskBOTH;
+
+    if( _block[4] )
+    {
+        _block[4]->_inputMask = kmaskBOTH;
+        _block[4]->_outputMask = kmaskBOTH;
+    }
+
+    Alg::doKeyOn(koi);
+}
+void Alg3::doKeyOn(DspKeyOnInfo& koi)
+{
+    if( _block[3] )
+    {
+        _block[3]->_inputMask = kmaskBOTH;
+        _block[3]->_outputMask = kmaskBOTH;
+    }
+
+    Alg::doKeyOn(koi);
+}
+void Alg6::doKeyOn(DspKeyOnInfo& koi)
+{
+    if( _block[4] )
+        _block[4]->_inputMask = kmaskBOTH;
+
+    Alg::doKeyOn(koi);
+}
+void Alg7::doKeyOn(DspKeyOnInfo& koi)
+{
+    if( _block[3] )
+    {
+        _block[3]->_inputMask = kmaskLOWER;
+        _block[3]->_outputMask = kmaskLOWER;
+    }
+    if( _block[4] )
+        _block[4]->_inputMask = kmaskBOTH;
+
+    Alg::doKeyOn(koi);
+}
+
+void Alg10::doKeyOn(DspKeyOnInfo& koi)
+{
+    if( _block[2] )
+    {
+        _block[2]->_inputMask = kmaskLOWER;
+        _block[2]->_outputMask = kmaskLOWER;
+    }
+    if( _block[4] )
+        _block[4]->_inputMask = kmaskBOTH;
+
+    Alg::doKeyOn(koi);
+}
+void Alg11::doKeyOn(DspKeyOnInfo& koi)
+{
+    if( _block[1] )
+        _block[1]->_outputMask = 3;
+    if( _block[2] )
+        _block[2]->_outputMask = kmaskLOWER;
+    if( _block[4] )
+        _block[4]->_inputMask = kmaskBOTH;
+
+    Alg::doKeyOn(koi);
+}
+void Alg12::doKeyOn(DspKeyOnInfo& koi)
+{
+    if( _block[1] )
+        _block[1]->_outputMask = kmaskBOTH;
+    if( _block[4] )
+        _block[4]->_inputMask = kmaskBOTH;
+
+    Alg::doKeyOn(koi);
+}
+void Alg14::doKeyOn(DspKeyOnInfo& koi)
+{
+    if( _block[2] )
+        _block[2]->_inputMask = kmaskLOWER;
+
+    Alg::doKeyOn(koi);
+}
+void Alg15::doKeyOn(DspKeyOnInfo& koi)
+{
+    if( _block[1] )
+        _block[1]->_inputMask = kmaskBOTH;
+
+    Alg::doKeyOn(koi);
+}
+void Alg22::doKeyOn(DspKeyOnInfo& koi)
+{
+    if( _block[2] )
+        _block[2]->_outputMask = kmaskLOWER;
+
+    Alg::doKeyOn(koi);
+}
+void Alg23::doKeyOn(DspKeyOnInfo& koi)
+{
+    if( _block[2] )
+        _block[2]->_outputMask = kmaskBOTH;
+
+    Alg::doKeyOn(koi);
+}
+void Alg24::doKeyOn(DspKeyOnInfo& koi)
+{
+    if( _block[2] )
+        _block[2]->_inputMask = kmaskBOTH;
+    if( _block[3] )
+        _block[2]->_outputMask = kmaskBOTH;
+    if( _block[4] )
+    {
+        _block[4]->_inputMask = kmaskBOTH;
+        _block[4]->_outputMask = kmaskBOTH;
+    }
+
+    Alg::doKeyOn(koi);
+}
+void Alg26::doKeyOn(DspKeyOnInfo& koi)
+{
+    if( _block[3] )
+        _block[3]->_outputMask = kmaskBOTH;
+    if( _block[4] )
+    {
+        _block[4]->_inputMask = kmaskBOTH;
+        _block[4]->_outputMask = kmaskBOTH;
+    }
+
+    Alg::doKeyOn(koi);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -264,15 +413,40 @@ Alg* AlgData::createAlgInst() const
             return new Alg2;
             break;
         case 3:
-            return new Alg1;
+            return new Alg3;
             break;
-        case 4:
-        case 5:
         case 6:
+            return new Alg6;
+            break;
         case 7:
-        case 8:
-        case 9:
-            return new Alg1;        
+            return new Alg7;
+            break;
+        case 10:
+            return new Alg10;        
+            break;
+        case 11:
+            return new Alg11;        
+            break;
+        case 12:
+            return new Alg12;        
+            break;
+        case 14:
+            return new Alg14;        
+            break;
+        case 15:
+            return new Alg15;        
+            break;
+        case 22:
+            return new Alg22;        
+            break;
+        case 23:
+            return new Alg23;        
+            break;
+        case 24:
+            return new Alg24;        
+            break;
+        case 26:
+            return new Alg26;        
             break;
         default:
             return new Alg1;
@@ -333,6 +507,12 @@ DspBlock* createDspBlock( const DspBlockData& dbd )
     if( dbd._dspBlock == "SHAPE MOD OSC" )
         rval = new SHAPEMODOSC(dbd);
 
+    if( dbd._dspBlock == "SYNC M" )
+        rval = new SYNCM(dbd);
+    if( dbd._dspBlock == "SYNC S" )
+        rval = new SYNCS(dbd);
+    if( dbd._dspBlock == "PWM" )
+        rval = new PWM(dbd);
 
 
     ////////////////////////

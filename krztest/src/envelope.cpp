@@ -135,7 +135,14 @@ void AsrInst::keyOn(const layerData* ld, const AsrData* data)
 void AsrInst::keyOff()
 {
     _released = true;
+    bool dorel = true;
+
     if( false == _ignoreRelease )
+        dorel = false;
+    if( _data and _data->_trigger != "ON" )
+        dorel = false;
+
+    if( dorel )
         initSeg(3);
 }
 
@@ -184,7 +191,7 @@ void RateLevelEnvInst::initSeg(int iseg)
             break;
         case 4:
         case 5:
-        case 6: // atk
+        case 6: // rel
             segtime /= _relAdjust;
             break;
     }
@@ -195,6 +202,7 @@ void RateLevelEnvInst::initSeg(int iseg)
     {   if( iseg==1 or iseg==2 or iseg==4 or iseg==5 ){
             // attack segss 2 and 3 only have effect
             // if their times are not 0
+            printf( "segt0 iseg<%d>\n", iseg );
         }
         else{
             _dstval = curseg._level;
@@ -230,7 +238,7 @@ float RateLevelEnvInst::compute()
             }
             else
             {   done = true;
-                _curval = 0.0f;
+                _curval = _dstval;
                 //_data = nullptr;
             }
         }
@@ -257,7 +265,7 @@ float RateLevelEnvInst::compute()
 
     _filtval = _filtval*0.995f + _curval*0.005f;
 
-    return clip_float(powf(_filtval,3.0f),-1.0f,1.0f);
+    return clip_float(powf(_filtval,2.0f),-1.0f,1.0f);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

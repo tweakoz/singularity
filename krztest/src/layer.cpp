@@ -82,8 +82,8 @@ void layer::compute(outputBuffer& obuf)
 
     HAF._funFrames[0]._value = _fun1._curval;
     HAF._funFrames[1]._value = _fun2._curval;
-    HAF._funFrames[2]._value = _fun4._curval;
-    HAF._funFrames[3]._value = _fun1._curval;
+    HAF._funFrames[2]._value = _fun3._curval;
+    HAF._funFrames[3]._value = _fun4._curval;
 
 
     _pchc1 = _pchControl1();
@@ -115,7 +115,7 @@ void layer::compute(outputBuffer& obuf)
                         : nullptr;
     bool doBlockStereo = bypassDSP 
                        ? false 
-                       : lastblock ? (lastblock->_numOutputs==2) 
+                       : lastblock ? (lastblock->numOutputs()==2) 
                                    : false;
     //printf( "doBlockStereo<%d>\n", int(doBlockStereo) );
 
@@ -274,9 +274,8 @@ void layer::compute(outputBuffer& obuf)
             for( int i=0; i<inumframes; i++ )
             {
                 float tgain = _postDSPGAIN*_masterGain;
-                float inp = lyroutl[i]; 
-                outl[i] += inp*tgain;
-                outr[i] += inp*tgain;
+                outl[i] += lyroutl[i]*tgain;
+                outr[i] += lyroutr[i]*tgain;
             }            
         }
     }
@@ -315,7 +314,7 @@ void layer::compute(outputBuffer& obuf)
             float l = _layerObuf._leftBuffer[i];
             float r = _layerObuf._rightBuffer[i];
             //tailb[i] = l;//doBlockStereo ? l+r : l;
-            HAF._oscopebuffer[i]=l;
+            HAF._oscopebuffer[i]=(l+r)*0.5f;
         }
 
         _syn._hudbuf.push(HAF);
@@ -430,6 +429,24 @@ controller_t layer::getController(const std::string& srcn) const
             float lt = -1.0f+float(rand()&0xffff)/32768.0f;
             return lt;
         };
+    else if( srcn == "AttVel" )
+        return [this]()
+        {   
+            float atkvel = float(this->_curvel)/128.0f;
+            return atkvel;
+        };
+    else if( srcn == "VTRIG1" )
+        return [this]()
+        {   
+            float atkvel = float(this->_curvel>64);
+            return atkvel;
+        };
+    else if( srcn == "VTRIG2" )
+        return [this]()
+        {   
+            float atkvel = float(this->_curvel>96);
+            return atkvel;
+        };
     else
     {
         float fv = atof(srcn.c_str());
@@ -496,12 +513,10 @@ void layer::keyOn( int note, int vel, const layerData* ld )
     const auto& F4 = ld->_f4Block;
     const auto& ENVC = ld->_envCtrlData;
 
-    hudkframe HKF;
-
-    HKF._note = note;
-    HKF._vel = vel;
-    HKF._layerdata = ld;
-    HKF._layerIndex = _ldindex;
+    _HKF._note = note;
+    _HKF._vel = vel;
+    _HKF._layerdata = ld;
+    _HKF._layerIndex = _ldindex;
 
     _useNatEnv = ENVC._useNatEnv;
     _ignoreRelease = ld->_ignRels;
@@ -510,6 +525,8 @@ void layer::keyOn( int note, int vel, const layerData* ld )
     _layerGain = ld->_outputGain;
     _postdone = 0;
     _masterGain = _syn._masterGain;
+
+    _curvel = vel;
 
     _lfo1.reset();
     _lfo2.reset();
@@ -569,7 +586,7 @@ void layer::keyOn( int note, int vel, const layerData* ld )
     printf( "layer<%d> region<%p>\n", _ldindex, region );
     if( region )
     {
-        HKF._kmregion = region;
+        _HKF._kmregion = region;
 
         _kmregion = region;
 
@@ -679,15 +696,13 @@ void layer::keyOn( int note, int vel, const layerData* ld )
         _alg->keyOn(koi);
     }
 
-    HKF._alg = _alg;
+    _HKF._alg = _alg;
 
     ///////////////////////////////////////
 
     _lyrPhase = 0;
     _phCounter = 0;
     _sinrepPH = 0.0f;
-
-    _syn._hudbuf.push(HKF);
 
 }
 

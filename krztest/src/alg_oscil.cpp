@@ -17,7 +17,7 @@ void SINE::compute(dspBlockBuffer& obuf) //final
     _fval[0] = centoff;
 
     int inumframes = obuf._numframes;
-    float* ubuf = obuf._upperBuffer;
+//    float* ubuf = obuf._upperBuffer;
     float lyrcents = _layer->_curcentsOSC;
     float cin = (lyrcents+centoff)*0.01;
     float frq = midi_note_to_frequency(cin);
@@ -29,7 +29,8 @@ void SINE::compute(dspBlockBuffer& obuf) //final
     if(1) for( int i=0; i<inumframes; i++ )
     {   float saw = _pblep.getAndInc();
         //saw *= _layer->_AENV[i];
-        ubuf[i] = saw;
+
+        output1(obuf,i, saw );
     }
 }
 void SINE::doKeyOn(const DspKeyOnInfo& koi) //final
@@ -50,7 +51,7 @@ void SAW::compute(dspBlockBuffer& obuf) //final
     _fval[0] = centoff;
 
     int inumframes = obuf._numframes;
-    float* ubuf = obuf._upperBuffer;
+    //float* ubuf = obuf._upperBuffer;
     float lyrcents = _layer->_curcentsOSC;
     float cin = (lyrcents+centoff)*0.01;
     float frq = midi_note_to_frequency(cin);
@@ -61,7 +62,8 @@ void SAW::compute(dspBlockBuffer& obuf) //final
     if(1) for( int i=0; i<inumframes; i++ )
     {   float saw = _pblep.getAndInc();
         //saw *= _layer->_AENV[i];
-        ubuf[i] = saw;
+        output1(obuf,i, saw );
+       // ubuf[i] = saw;
     }
 }
 void SAW::doKeyOn(const DspKeyOnInfo& koi) //final
@@ -82,7 +84,7 @@ void SQUARE::compute(dspBlockBuffer& obuf) //final
     _fval[0] = centoff;
 
     int inumframes = obuf._numframes;
-    float* ubuf = obuf._upperBuffer;
+    //float* ubuf = obuf._upperBuffer;
     float lyrcents = _layer->_curcentsOSC;
     float cin = (lyrcents+centoff)*0.01;
     float frq = midi_note_to_frequency(cin);
@@ -93,7 +95,8 @@ void SQUARE::compute(dspBlockBuffer& obuf) //final
     if(1) for( int i=0; i<inumframes; i++ )
     {   float saw = _pblep.getAndInc();
         //saw *= _layer->_AENV[i];
-        ubuf[i] = saw;
+        //ubuf[i] = saw;
+        output1(obuf,i, saw );
     }
 }
 void SQUARE::doKeyOn(const DspKeyOnInfo& koi) //final
@@ -166,7 +169,7 @@ void SAWPLUS::compute(dspBlockBuffer& obuf) //final
         float saw = _pblep.getAndInc();
         //saw *= _layer->_AENV[i];
         float swplus = input+(saw);
-        ubuf[i] = swplus;
+        output1(obuf,i, swplus );
     }
 }
 void SAWPLUS::doKeyOn(const DspKeyOnInfo& koi) //final
@@ -200,12 +203,11 @@ void SWPLUSSHP::compute(dspBlockBuffer& obuf) //final
 
 
     if(1) for( int i=0; i<inumframes; i++ )
-    {   float input = clip_float(ubuf[i]*pad,-1,1);//*_dbd._pad;///_layer->_AENV[i];
+    {   float input = clip_float(ubuf[i]*pad,-1,1);
         float saw = _pblep.getAndInc();
-        //saw *= _layer->_AENV[i];
-        float xxx = wrap(input+saw,1.0);
+        float xxx = wrap(input+saw,-30.0f);
         float swplusshp = shaper(xxx,.25);
-        ubuf[i] = (swplusshp);//*_layer->_AENV[i];
+        ubuf[i] = (xxx);
     }
 }
 void SWPLUSSHP::doKeyOn(const DspKeyOnInfo& koi) //final
@@ -359,5 +361,137 @@ void PLUSSHAPEMODOSC::doKeyOn(const DspKeyOnInfo& koi) //final
 {
 }
 
+///////////////////////////////////////////////////////////////////////////////
 
+SYNCM::SYNCM( const DspBlockData& dbd )
+    : DspBlock(dbd)
+{   _numParams = 1;    
+}
+
+void SYNCM::compute(dspBlockBuffer& obuf) //final
+{
+    float centoff = _ctrl[0].eval();//,0.01f,100.0f);
+    _fval[0] = centoff;
+
+    int inumframes = obuf._numframes;
+    float* ubuf = obuf._upperBuffer;
+    float lyrcents = _layer->_curcentsOSC;
+    float cin = (lyrcents+centoff)*0.01;
+    float frq = midi_note_to_frequency(cin);
+
+    float SR = _layer->_syn._sampleRate;
+    _phaseInc = frq/SR;
+
+
+    //printf( "_dbd._pad<%f>\n", _dbd._pad );
+
+
+    if(1) for( int i=0; i<inumframes; i++ )
+    {   
+        ubuf[i] = _phase;
+        _phase = fmod(_phase+_phaseInc,1.0f);
+    }
+}
+void SYNCM::doKeyOn(const DspKeyOnInfo& koi) //final
+{
+    _phaseInc = 0.0f;
+    _phase = 0.0f;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+SYNCS::SYNCS( const DspBlockData& dbd )
+    : DspBlock(dbd)
+    , _pblep(48000,PolyBLEP::RAMP)
+{   _numParams = 1;    
+    _pblep.setAmplitude(1.0f);   
+    _prvmaster = 0.0f;         
+}
+
+void SYNCS::compute(dspBlockBuffer& obuf) //final
+{
+    float centoff = _ctrl[0].eval();//,0.01f,100.0f);
+    _fval[0] = centoff;
+
+    int inumframes = obuf._numframes;
+    float* ubuf = obuf._upperBuffer;
+    float lyrcents = _layer->_curcentsOSC;
+    float cin = (lyrcents+centoff)*0.01;
+    float frq = midi_note_to_frequency(cin);
+    float SR = _layer->_syn._sampleRate;
+    _pblep.setFrequency(frq);
+    float pad = _dbd._pad;
+
+    //printf( "_dbd._pad<%f>\n", _dbd._pad );
+
+
+    if(1) for( int i=0; i<inumframes; i++ )
+    {   float input = ubuf[i];
+
+        bool do_sync = ( input < _prvmaster);            
+        _prvmaster = input;
+
+        if( do_sync )
+            _pblep.sync(0.0f);
+
+        float saw = _pblep.getAndInc();
+        ubuf[i] = saw;
+    }
+}
+void SYNCS::doKeyOn(const DspKeyOnInfo& koi) //final
+{
+    _prvmaster = 0.0f;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+PWM::PWM( const DspBlockData& dbd )
+    : DspBlock(dbd)
+    , _pblep(48000,PolyBLEP::SINE)
+{   _numParams = 1;    
+    _pblep.setAmplitude(1.0f);   
+}
+
+void PWM::compute(dspBlockBuffer& obuf) //final
+{
+    float offset = _ctrl[0].eval();//,0.01f,100.0f);
+    _fval[0] = offset;
+
+    int inumframes = obuf._numframes;
+    float* ubuf = obuf._upperBuffer;
+    float lyrcents = _layer->_curcents;
+    float cin = (lyrcents)*0.01;
+    float frq = midi_note_to_frequency(cin);
+    float SR = _layer->_syn._sampleRate;
+    _pblep.setFrequency(frq);
+    float pad = _dbd._pad;
+
+    //printf( "_dbd._pad<%f>\n", _dbd._pad );
+
+
+    if(1) for( int i=0; i<inumframes; i++ )
+    {   float input = ubuf[i]*pad;
+        ubuf[i] = input+offset*0.01f;
+    }
+}
+void PWM::doKeyOn(const DspKeyOnInfo& koi) //final
+{
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+SAMPLEPB::SAMPLEPB( const DspBlockData& dbd )
+    : DspBlock(dbd)
+{
+
+}
+void SAMPLEPB::compute(dspBlockBuffer& obuf) // final
+{
+
+}
+
+void SAMPLEPB::doKeyOn(const DspKeyOnInfo& koi) // final
+{
+
+}
 

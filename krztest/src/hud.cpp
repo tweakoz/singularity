@@ -340,6 +340,9 @@ void synth::onDrawHudPage2(float width, float height)
     const hudkframe& HKF = _curhud_kframe;
 
     auto layd = HKF._layerdata;
+    if( nullptr == layd )
+      return;
+
     int lidx = HKF._layerIndex;
 
     std::lock_guard<std::mutex> lock(hudl->_mutex);
@@ -487,7 +490,7 @@ void DrawEnv(const EnvDrawReq& EDR)
     if( useNENV )
         sampname = "natural";
     else
-        sampname = formatString("env%d", EDR.ienv);
+        sampname = formatString("env%d", EDR.ienv+1);
     
 
     RateLevelEnvData* ENVD = nullptr;
@@ -710,7 +713,7 @@ void DrawAsr(const EnvDrawReq& EDR)
     const auto& ENVCT = ld->_envCtrlData;
     bool collsamp = ( EDR.s->_lnoteframe%3 == 0 );
 
-    std::string sampname = formatString("asr%d", EDR.ienv);
+    std::string sampname = formatString("asr%d", EDR.ienv+1);
 
     /////////////////////////////////////////////////
     // collect hud samples
@@ -1192,6 +1195,9 @@ void synth::onDrawHudPage3(float width, float height)
       float x1 = OSC_X1;
       float y1 = OSC_Y1+OSC_HH+ldata[mapI(i)]*OSC_HH;
       glVertex3f(x1,y1,0);      
+
+      const int koscfr = inumframes/4;
+
       for( i=0; i<inumframes; i++ )
       {   int j = mapI(i);
 
@@ -1204,12 +1210,13 @@ void synth::onDrawHudPage3(float width, float height)
           float s2 = ldata[i];
           input[i]= s2*win;
 
-          float x = OSC_W*float(i)/float(inumframes);
-          float y = OSC_HH+s*OSC_HH;
+          float x = OSC_W*float(i)/float(koscfr);
+          float y = OSC_HH-s*OSC_HH;
 
           float x2 = x+OSC_X1;
           float y2 = y+OSC_HH;
-          glVertex3f(x2,y2,0);      
+          if(i<koscfr)
+            glVertex3f(x2,y2,0);      
       }
       glEnd();
       
@@ -1265,8 +1272,8 @@ void synth::onDrawHudPage3(float width, float height)
       for( int i=0; i<inumframes/2; i++ )
       { 
           float dB = mapDB(re[i],im[i]);
-          _fftbuffer[i] += dB*0.1+0.0001f;
-          _fftbuffer[i] *= 0.9f;
+          _fftbuffer[i] += dB*0.03+0.0001f;
+          _fftbuffer[i] *= 0.97f;
           dB = _fftbuffer[i];
 
           //printf( "dB<%f>\n", dB);
@@ -1275,7 +1282,7 @@ void synth::onDrawHudPage3(float width, float height)
           float frq = fi*48000.0f;
           float midinote = frequency_to_midi_note(frq);
 
-          float x = ANA_W*(midinote-36.0f)/128.0;
+          float x = ANA_W*(midinote-36.0f)/108.0;
           float y = mapFFTY(dB-12);
           float xx = x+ANA_X1;
           glVertex3f(xx,y,0);      
@@ -1285,10 +1292,10 @@ void synth::onDrawHudPage3(float width, float height)
       //////////////////////////////
       glColor4f(.3,.1,.3,1);
       glBegin(GL_LINES);
-      for( int n=0; n<128; n+=12 )
+      for( int n=0; n<108; n+=12 )
       {
         float db0 = i;
-        float x = ANA_X1+ANA_W*float(n)/128.0;
+        float x = ANA_X1+ANA_W*float(n)/108.0;
         glVertex3f(x,ANA_Y1,0);      
         glVertex3f(x,ANA_Y2,0);      
 
@@ -1310,9 +1317,9 @@ void synth::onDrawHudPage3(float width, float height)
         drawtext( formatString("%g dB",db0), 40,y+10, fontscale, .6,0,.8 );
 
       }
-      for( int n=0; n<128; n+=12 )
+      for( int n=0; n<108; n+=12 )
       {
-        float x = ANA_X1-20+ANA_W*float(n)/128.0;
+        float x = ANA_X1-20+ANA_W*float(n)/108.0;
         float f = midi_note_to_frequency(n+36);
         drawtext( formatString("  midi\n   %d\n(%d hz)",n+36,int(f)), x,ANA_Y2+30, fontscale, .6,0,.8 );
 
@@ -1382,24 +1389,29 @@ void synth::onDrawHudPage3(float width, float height)
 
       //////////////////////
 
-      for( int i=0; i<4; i++ )
+      int iblockID = 0;
+
+      for( int i=0; i<Alg::kmaxblocks; i++ )
       {
          const DspBlockData* dbd = nullptr;
          switch(i)
          {
-            case 0:
+            case 1:
               dbd = & layd->_f1Block;
               break;
-            case 1:
+            case 2:
               dbd = & layd->_f2Block;
               break;
-            case 2:
+            case 3:
               dbd = & layd->_f3Block;
               break;
-            case 3:
+            case 4:
               dbd = & layd->_f4Block;
               break;
          }
+
+         if( nullptr == dbd )
+            continue;
 
          int xt = xb+10;
          int yt = ytb+30;
@@ -1418,16 +1430,37 @@ void synth::onDrawHudPage3(float width, float height)
 
          if( blk )
          {
-            bool block_ena = _fblockEnable[i];
+            int controlBlockID = i;
+            bool block_ena = _fblockEnable[controlBlockID];
 
             int fidx = blk->_baseIndex;
 
-            text = formatString("INP<%d> OUT<%d>", blk->_numInputs, blk->_numOutputs );
+            int padDB = round(linear_amp_ratio_to_decibel(dbd->_pad));
+
+
+            text = formatString("INP<%d> OUT<%d> PAD<%d dB>", blk->numInputs(), blk->numOutputs(), padDB );
             drawtext( text, xt, yt, fontscale, 1,1,1 );
             yt += 20;
 
-            auto drawfhud = [&blk,&xt,&yt,&dbd](int idx, float r, float g, float b)
+            auto drawfhud = [&blk,&xt,&yt,&controlBlockID,&layd](int idx, float r, float g, float b)
             {
+                 const DspBlockData* dbd = nullptr;
+                 switch(controlBlockID+idx)
+                 {
+                    case 1:
+                      dbd = & layd->_f1Block;
+                      break;
+                    case 2:
+                      dbd = & layd->_f2Block;
+                      break;
+                    case 3:
+                      dbd = & layd->_f3Block;
+                      break;
+                    case 4:
+                      dbd = & layd->_f4Block;
+                      break;
+                 }
+
                 const auto& SRC1 = dbd->_mods._src1;
                 float SRC1D = dbd->_mods._src1Depth;
                 const auto& SRC2 = dbd->_mods._src2;
@@ -1511,31 +1544,35 @@ void synth::onDrawHudPage3(float width, float height)
       }
       yb = 90;
       PushOrtho(width,height);
-      for( int i=0; i<4; i++ )
+      for( int i=0; i<Alg::kmaxblocks; i++ )
       {
          const DspBlockData* dbd = nullptr;
          switch(i)
          {
-            case 0:
+            case 1:
               dbd = & layd->_f1Block;
               break;
-            case 1:
+            case 2:
               dbd = & layd->_f2Block;
               break;
-            case 2:
+            case 3:
               dbd = & layd->_f3Block;
               break;
-            case 3:
+            case 4:
               dbd = & layd->_f4Block;
               break;
          }
+
+         if( nullptr == dbd )
+            continue;
+
          auto name = dbd->_dspBlock;
          auto b = alg->_block[i];
          int color = 2;
          int numparam = 1;
          if( b )
          {
-            color = _fblockEnable[i] ? 0 : 1;
+            color = _fblockEnable[i-1] ? 0 : 1;
             numparam = b->_numParams;
          }
         if( name.length() )
@@ -1555,6 +1592,6 @@ void synth::onDrawHudPage3(float width, float height)
 
       float panx = DSPx+16;
       PanPadOut( "U", &F3D, panx,yb+40 );
-      PanPadOut( "L", &F4D, panx,yb+100 );
+      PanPadOut( "L/S", &F4D, panx,yb+100 );
 
 }

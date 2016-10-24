@@ -143,6 +143,8 @@ void filescanner::parseHobbes(	const datablock& db,
 		getFParamAMT(hfp);
 	else if( hfp._blockScheme == "WID" )
 		getFParamWID(hfp);
+	else if( hfp._blockScheme == "WID(PWM)" )
+		getFParamPWM(hfp);
 	else if( hfp._blockScheme == "SEP" )
 		getFParamSEP(hfp);
 	else if( hfp._blockScheme == "EVN" )

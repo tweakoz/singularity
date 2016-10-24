@@ -84,6 +84,10 @@ void programInst::keyOn( int note, const programData* pd )
 	else 
 		_syn._hudLayer = nullptr;
 
+    if( _syn._hudLayer )
+        _syn._hudbuf.push(_syn._hudLayer->_HKF);
+
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////

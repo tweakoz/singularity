@@ -44,7 +44,7 @@ void TrapSVF::SetWithQ(eFilterMode mode, float center, float Q) {
     float dF = center/Q;
     //printf( "svf<%p> center<%f> Q<%f> dF<%f>\n", this, center, Q, dF );
     //Q = clip_float(Q,0.0025,100);
-    Q = clip_float(Q,0.5,100);
+    Q = clip_float(Q,0.125,100);
     float g = tan(pi*center/OSR);
     float k = 1.0f/Q;
     a1 = 1.0f/(1.0f+g*(g+k));
@@ -73,6 +73,12 @@ void TrapSVF::SetWithQ(eFilterMode mode, float center, float Q) {
 
 void TrapSVF::SetWithRes(eFilterMode mode, float center, float res)
 {
+
+    // 2-2*res = 1/Q
+    // q = 1.0/(2-2*res)
+
+    // Q = center frequency / bandwidth
+
     // res = 1- 1/(2Q) 
     // -1/2Q =  res-1
     // -1 = (res-1)*2Q
@@ -88,10 +94,12 @@ void TrapSVF::SetWithRes(eFilterMode mode, float center, float res)
 
     // Q = fC/dF
 
+    //float ling = decibel_to_linear_amp_ratio(res);
+
     //res = clip_float(res,0.01f,48.0f);
-    auto Q = 1.0f/(2*(1.0f-res));
+    auto Q = 0.5f/(2.0f-(2.0f*res));
     //printf( "center<%f> res<%f> Q<%f>\n", center, res, Q );
-    SetWithQ( mode, center, Q );
+    SetWithQ( mode, center, res );;//res );
 }
 void TrapSVF::SetWithBWoct(eFilterMode mode, float center, float bwOct)
 {

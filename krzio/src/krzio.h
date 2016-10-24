@@ -505,6 +505,7 @@ void getFParamWRP( fparam& fp );
 void getFParamDEP( fparam& fp );
 void getFParamAMT( fparam& fp );
 void getFParamWID( fparam& fp );
+void getFParamPWM( fparam& fp );
 void getFParamSEP( fparam& fp );
 void getFParamEVNODD( fparam& fp );
 void getFParamXFD( fparam& fp );

@@ -37,6 +37,10 @@ struct DspKeyOnInfo
 
 ///////////////////////////////////////////////////////////////////////////////
 
+const int kmaskUPPER = 1;
+const int kmaskLOWER = 2;
+const int kmaskBOTH = 3;
+
 struct DspBlock
 {
     DspBlock(const DspBlockData& dbd);
@@ -47,22 +51,41 @@ struct DspBlock
 
     virtual void doKeyOn(const DspKeyOnInfo& koi) {}
     virtual void doKeyOff() {}
+
+    float* getInpBuf1(dspBlockBuffer& obuf);
+    float* getOutBuf1(dspBlockBuffer& obuf);
+
+    void output1(dspBlockBuffer& obuf,int index,float val);
+
+    float outputGainU();
+    float outputGainL();
+    float outputGainSINGLE();
+
     const DspBlockData _dbd;
     int _baseIndex = -1;
     int _numParams = 0;
-    int _numOutputs = 1;
-    int _numInputs = 1;
+    int numOutputs() const;
+    int numInputs() const;
     layer* _layer = nullptr;
 
     float _fval[3];
     FPARAM _ctrl[3];
 
-    bool _useLowerInput = false;
+    int _inputMask = kmaskUPPER;
+    int _outputMask = kmaskUPPER;
 };  
 
 ///////////////////////////////////////////////////////////////////////////////
 // oscils
 ///////////////////////////////////////////////////////////////////////////////
+
+struct SAMPLEPB : public DspBlock
+{
+    SAMPLEPB( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
 
 struct SWPLUSSHP : public DspBlock
 {
@@ -116,6 +139,29 @@ struct SHAPEMODOSC : public DspBlock
 struct PLUSSHAPEMODOSC : public DspBlock
 {
     PLUSSHAPEMODOSC( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    PolyBLEP _pblep;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
+struct SYNCM : public DspBlock
+{
+    SYNCM( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    float _phase;
+    float _phaseInc;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
+struct SYNCS : public DspBlock
+{
+    SYNCS( const DspBlockData& dbd );
+    void compute(dspBlockBuffer& obuf) final;
+    PolyBLEP _pblep;
+    float _prvmaster;
+    void doKeyOn(const DspKeyOnInfo& koi) final;
+};
+struct PWM : public DspBlock
+{
+    PWM( const DspBlockData& dbd );
     void compute(dspBlockBuffer& obuf) final;
     PolyBLEP _pblep;
     void doKeyOn(const DspKeyOnInfo& koi) final;
@@ -369,50 +415,80 @@ struct Alg
     void keyOn(DspKeyOnInfo& koi);
     void keyOff();
 
+    void compute(outputBuffer& obuf);
+
     virtual bool hasPitchBlock() const { return true; }
-    virtual int f1BlockCount() const { return 0; }
-    virtual int f2BlockCount() const { return 0; }
-    virtual int f3BlockCount() const { return 0; }
-    virtual int f4BlockCount() const { return 0; }
-    virtual void compute(outputBuffer& obuf);
     virtual void doKeyOn(DspKeyOnInfo& koi);
 
     void intoDspBuf(const outputBuffer& obuf, dspBlockBuffer& dspbuf);
     void intoOutBuf(outputBuffer& obuf, const dspBlockBuffer& dspbuf, int inumo);
     DspBlock* lastBlock() const;
 
-    DspBlock* _block[4];
+    static const int kmaxblocks = 5;
+
+    DspBlock* _block[kmaxblocks];
 
     dspBlockBuffer _blockBuf;
 };
 
 struct Alg1 : public Alg
 {
-    int f1BlockCount() const final { return 3; }
 
 };
 struct Alg2 : public Alg
 {
-    int f1BlockCount() const final { return 2; }
-    int f3BlockCount() const final { return 1; }
     void doKeyOn(DspKeyOnInfo& koi) final;
-    //void compute(outputBuffer& obuf) final;
-};
-struct Alg24 : public Alg
-{
-    int f1BlockCount() const final { return 1; }
-    int f3BlockCount() const final { return 1; }
-    void doKeyOn(DspKeyOnInfo& koi) final;
-    void compute(outputBuffer& obuf) final;
 };
 struct Alg3 : public Alg
 {
-    int f1BlockCount() const final { return 2; }
-    int f3BlockCount() const final { return 2; }
-    void compute(outputBuffer& obuf) final;
+    void doKeyOn(DspKeyOnInfo& koi) final;
+};
+struct Alg6 : public Alg
+{
+    void doKeyOn(DspKeyOnInfo& koi) final;
+};
+struct Alg7 : public Alg
+{
+    void doKeyOn(DspKeyOnInfo& koi) final;
 };
 
 struct Alg10 : public Alg
+{
+    void doKeyOn(DspKeyOnInfo& koi) final;
+};
+struct Alg11 : public Alg
+{
+    void doKeyOn(DspKeyOnInfo& koi) final;
+};
+struct Alg12 : public Alg
+{
+    void doKeyOn(DspKeyOnInfo& koi) final;
+};
+struct Alg13 : public Alg
+{
+    void doKeyOn(DspKeyOnInfo& koi) final;
+};
+struct Alg14 : public Alg
+{
+    void doKeyOn(DspKeyOnInfo& koi) final;
+};
+struct Alg15 : public Alg
+{
+    void doKeyOn(DspKeyOnInfo& koi) final;
+};
+struct Alg22 : public Alg
+{
+    void doKeyOn(DspKeyOnInfo& koi) final;
+};
+struct Alg23 : public Alg
+{
+    void doKeyOn(DspKeyOnInfo& koi) final;
+};
+struct Alg24 : public Alg
+{
+    void doKeyOn(DspKeyOnInfo& koi) final;
+};
+struct Alg26 : public Alg
 {
     void doKeyOn(DspKeyOnInfo& koi) final;
 };

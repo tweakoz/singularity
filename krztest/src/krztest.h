@@ -26,19 +26,7 @@ struct programInst
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static const int koscopelength = 1024;
-
-struct hudkframe
-{
-	int _note = 0;
-	int _vel = 0;
-	int _layerIndex = -1;
-	const layerData* _layerdata = nullptr;
-    const kmregion* _kmregion = nullptr;
-    Alg* _alg = nullptr;
-
-
-};
+static const int koscopelength = 4096;
 
 struct envframe
 {

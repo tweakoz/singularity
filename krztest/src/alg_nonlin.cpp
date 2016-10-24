@@ -14,13 +14,16 @@ void SHAPER::compute(dspBlockBuffer& obuf) //final
 {
     float pad = _dbd._pad;
     int inumframes = obuf._numframes;
-    float* ubuf = obuf._upperBuffer;
+
     float amt = _ctrl[0].eval();//,0.01f,100.0f);
     _fval[0] = amt;
+
+    float* inpbuf = getInpBuf1(obuf); 
+
     //float la = decibel_to_linear_amp_ratio(amt);
     if(1) for( int i=0; i<inumframes; i++ )
-    {   float s1 = shaper(ubuf[i]*pad,amt);
-        ubuf[i] = s1;
+    {   float s1 = shaper(inpbuf[i]*pad,amt);
+        output1(obuf,i, s1 );
     }
 }
 
@@ -114,11 +117,12 @@ WRAP::WRAP( const DspBlockData& dbd )
 void WRAP::compute(dspBlockBuffer& obuf) //final
 {
     int inumframes = obuf._numframes;
-    float* ubuf = obuf._upperBuffer;
+    float* inpbuf = getInpBuf1(obuf); 
     float rpoint = _ctrl[0].eval();//,-100,100.0f);
     _fval[0] = rpoint;
     if(1) for( int i=0; i<inumframes; i++ )
-    {   ubuf[i] = wrap(ubuf[i],rpoint);
+    {   
+        output1(obuf,i, wrap(inpbuf[i],rpoint) );
     }
 }
 
@@ -134,15 +138,15 @@ void DIST::compute(dspBlockBuffer& obuf) //final
 {
     float pad = _dbd._pad;
     int inumframes = obuf._numframes;
-    float* ubuf = obuf._upperBuffer;
+    float* inpbuf = getInpBuf1(obuf); 
     float adj = _ctrl[0].eval();
     _fval[0] = adj;
     float ratio = decibel_to_linear_amp_ratio(adj+30.0)*pad;
 
     if(1) for( int i=0; i<inumframes; i++ )
     {   
-        float v = ubuf[i]*ratio;
+        float v = inpbuf[i]*ratio;
         v = softsat(v,1);
-        ubuf[i] = v;
+        output1(obuf,i, v );
     }
 }
